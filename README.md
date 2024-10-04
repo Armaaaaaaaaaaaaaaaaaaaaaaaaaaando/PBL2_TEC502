@@ -2,6 +2,13 @@
 
 
 (ABAIXO É PROVISÓRIO)
+(ABAIXO É PROVISÓRIO)
+
+(ABAIXO É PROVISÓRIO)
+
+(ABAIXO É PROVISÓRIO)
+
+(ABAIXO É PROVISÓRIO)
 VENDEPASS: Venda de Passagens
 Introdução
 Este relatório aborda a implementação de um sistema de reservas de passagens aéreas voltado para companhias aéreas de baixo custo. O problema central enfrentado por uma nova companhia brasileira de baixo custo é a necessidade de disponibilizar a compra de passagens pela Internet, permitindo que os clientes escolham trechos disponíveis para suas viagens. Desta forma, foi feita a criação de um sistema de comunicação baseado em TCP/IP que possibilite a interação fluida entre os clientes e o servidor. Este projeto de sistema de reservas de passagens aéreas, utilizando Java, Java NIO e JSON, implementou uma solução escalável para gerenciar a comunicação entre clientes e servidor em um ambiente de baixo custo. A metodologia adotada envolve o uso de sockets TCP para garantir uma comunicação eficaz e a implementação de contêineres Docker para facilitar a execução de múltiplas instâncias do sistema. Através da utilização de Sockets não bloqueantes, o servidor consegue suportar múltiplas conexões simultâneas, permitindo que diversos clientes interajam com o servidor sem comprometer a performance do sistema. Os resultados alcançados demonstram que o sistema é capaz de gerenciar as reservas de passagens de maneira eficiente, permitindo que os clientes escolham trechos e realizem compras de forma intuitiva.
