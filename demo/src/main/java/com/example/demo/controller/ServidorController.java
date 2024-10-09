@@ -32,7 +32,9 @@ public class ServidorController {
 
     @PostMapping("/comprar")
     public String comprarPassagem(@RequestParam String origem, @RequestParam String destino) {
-            return "Falha na compra: passagens esgotadas ou trecho inexistente.";
+            return compraService.comprar(origem,destino);
+
+           // return "Falha na compra: passagens esgotadas ou trecho inexistente.";
         }
     
 
