@@ -4,11 +4,21 @@ public class Trecho {
     private String origem;
     private String destino;
     private long passagensDisponiveis;
+    private String servidor;
 
-    public Trecho(String origem, String destino, long passagensDisponiveis) {
+    public Trecho(String origem, String destino, long passagensDisponiveis,String servidor) {
         this.origem = origem;
         this.destino = destino;
         this.passagensDisponiveis = passagensDisponiveis;
+        this.servidor = servidor;
+    }
+
+    public String getServidor(){
+        return servidor;
+    }
+
+    public void setServidor(String servidor){
+        this.servidor = servidor;
     }
 
 
