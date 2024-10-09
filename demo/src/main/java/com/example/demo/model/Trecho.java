@@ -45,4 +45,16 @@ public class Trecho {
     public void setPassagensDisponiveis(long passagensDisponiveis) {
         this.passagensDisponiveis = passagensDisponiveis;
     }
+
+
+    @Override
+public String toString() {
+    return "Trecho{" +
+            "origem='" + origem + '\'' +
+            ", destino='" + destino + '\'' +
+            ", quantidade=" + passagensDisponiveis +
+            ", servidor='" + servidor + '\'' +
+            '}';
+}
+
 }
