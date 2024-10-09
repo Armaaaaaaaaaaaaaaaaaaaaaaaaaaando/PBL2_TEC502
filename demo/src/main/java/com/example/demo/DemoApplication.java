@@ -33,14 +33,14 @@ public class DemoApplication {
             AdicionarCidades adicionarCidades = context.getBean(AdicionarCidades.class);
 
             if (serverId.equals("1")) {
-                adicionarCidades.adicionarCidade("Sao Paulo", "Rio de Janeiro", 10L);
-                adicionarCidades.adicionarCidade("Sao Paulo", "Brasilia", 10L);
+                adicionarCidades.adicionarCidade("Sao Paulo", "Rio de Janeiro", 10L,serverId);
+                adicionarCidades.adicionarCidade("Sao Paulo", "Brasilia", 10L,serverId);
             } else if (serverId.equals("2")) {
-                adicionarCidades.adicionarCidade("Salvador", "Recife", 15L);
-                adicionarCidades.adicionarCidade("Fortaleza", "Belo Horizonte", 20L);
+                adicionarCidades.adicionarCidade("Salvador", "Recife", 15L,serverId);
+                adicionarCidades.adicionarCidade("Fortaleza", "Belo Horizonte", 20L,serverId);
             } else if (serverId.equals("3")) {
-                adicionarCidades.adicionarCidade("Curitiba", "Porto Alegre", 12L);
-                adicionarCidades.adicionarCidade("Manaus", "Belem", 8L);
+                adicionarCidades.adicionarCidade("Curitiba", "Porto Alegre", 12L,serverId);
+                adicionarCidades.adicionarCidade("Manaus", "Belem", 8L,serverId);
             }
         };
     }
