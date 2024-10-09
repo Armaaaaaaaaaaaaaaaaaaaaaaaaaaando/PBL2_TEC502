@@ -11,8 +11,8 @@ public class AdicionarCidades {
     @Autowired
     private CompraService compraService;
 
-    public void adicionarCidade(String origem, String destino, Long passagensDisponiveis) {
-        Trecho trecho = new Trecho(origem, destino, passagensDisponiveis);
+    public void adicionarCidade(String origem, String destino, Long passagensDisponiveis,String servidor) {
+        Trecho trecho = new Trecho(origem, destino, passagensDisponiveis,servidor);
         String chave = origem + "-" + destino;
         compraService.getAll().put(chave, trecho);
     }
