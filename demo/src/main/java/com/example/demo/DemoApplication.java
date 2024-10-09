@@ -13,8 +13,9 @@ public class DemoApplication {
 
     public static void main(String[] args) {
         startServer("1", 8081);
-        startServer("2", 8082);
         startServer("3", 8083);
+        startServer("2", 8082);
+
     }
 
     private static void startServer(String serverId, int port) {

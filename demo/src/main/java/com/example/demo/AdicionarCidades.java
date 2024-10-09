@@ -14,6 +14,6 @@ public class AdicionarCidades {
     public void adicionarCidade(String origem, String destino, Long passagensDisponiveis) {
         Trecho trecho = new Trecho(origem, destino, passagensDisponiveis);
         String chave = origem + "-" + destino;
-        compraService.getAllTrechos().put(chave, trecho);
+        compraService.getAll().put(chave, trecho);
     }
 }

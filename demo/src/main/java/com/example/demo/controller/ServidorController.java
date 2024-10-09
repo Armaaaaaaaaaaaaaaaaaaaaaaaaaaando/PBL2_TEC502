@@ -19,32 +19,21 @@ public class ServidorController {
     public ConcurrentHashMap<String, Trecho> listarTrechos() {
         return compraService.getAllTrechos();
     }
+
+    @GetMapping("/trecho")
+    public ConcurrentHashMap<String, Trecho> geta() {
+        return compraService.getAll();
+    }
     
+    @GetMapping("/ready")
+    public String ready() {
+        return "OK";
+    }
 
     @PostMapping("/comprar")
     public String comprarPassagem(@RequestParam String origem, @RequestParam String destino) {
-        if (compraService.comprarPassagem(origem, destino)) {
-            return "Passagem comprada com sucesso!";
-        } else {
             return "Falha na compra: passagens esgotadas ou trecho inexistente.";
         }
-    }
+    
 
-    // Endpoint para receber a atualização do trecho
-    @PutMapping("/atualizarTrecho")
-    public String atualizarTrecho(@RequestBody Map<String, Object> trechoData) {
-        String origem = (String) trechoData.get("origem");
-        String destino = (String) trechoData.get("destino");
-        int passagensDisponiveis = (Integer) trechoData.get("passagensDisponiveis");
-
-        Trecho trecho = compraService.getTrecho(origem, destino);
-        
-        if (trecho != null) {
-            // Atualiza o número de passagens disponíveis localmente
-            trecho.setPassagensDisponiveis(passagensDisponiveis);
-            return "Trecho atualizado localmente com sucesso!";
-        } else {
-            return "Falha ao atualizar trecho: trecho inexistente.";
-        }
-    }
 }

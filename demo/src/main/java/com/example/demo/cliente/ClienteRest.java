@@ -26,11 +26,9 @@ public class ClienteRest {
     }
 
     public static void main(String[] args) {
-        String servidorUrl = "http://localhost:8083"; // URL do servidor
+        String servidorUrl = "http://localhost:8082"; // URL do servidor
         ClienteRest cliente = new ClienteRest(servidorUrl);
 
-        cliente.listarTrechos();
-        cliente.comprarPassagem("Manaus", "Belem");
         cliente.listarTrechos();
     }
 }
