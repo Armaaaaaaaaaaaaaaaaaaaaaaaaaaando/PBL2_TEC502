@@ -8,8 +8,8 @@ import org.springframework.web.client.RestTemplate;
 @Configuration
 public class AppConfig {
 
-     @Bean
-    public RestTemplate restTemplate() {
+     @Bean(name = "restTemplateApp")
+    public RestTemplate restTemplateApp() {
         RestTemplate restTemplate = new RestTemplate();
         restTemplate.getMessageConverters().add(new MappingJackson2HttpMessageConverter());
         return restTemplate;
