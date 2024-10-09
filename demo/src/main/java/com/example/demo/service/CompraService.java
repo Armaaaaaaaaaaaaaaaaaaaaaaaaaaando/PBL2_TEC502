@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
@@ -49,5 +48,20 @@ public class CompraService {
             // Tratar erros de comunicação, como servidor indisponível
             System.err.println("Erro ao comunicar com o servidor: " + url + " - " + e.getMessage());
         }
+    }
+
+    public String comprar(String origem, String destino){
+        //return getAll().toString();
+        String conteudo = origem + "-" + destino;
+    
+        
+        for(String chave : trechos.keySet()){
+            if(chave.equals(conteudo)){
+                trechos.get(chave).setPassagensDisponiveis(trechos.get(chave).getPassagensDisponiveis()-1);
+                return "Venda feita";
+            }
+        }
+        return "trecho não encontrado";    
+
     }
 }
