@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.model.Trecho;
 import com.example.demo.service.CompraService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -32,10 +33,25 @@ public class ServidorController {
 
     @PostMapping("/comprar")
     public String comprarPassagem(@RequestParam String origem, @RequestParam String destino) {
-            return compraService.comprar(origem,destino);
+        return compraService.comprar(origem, destino);
+    }
 
-           // return "Falha na compra: passagens esgotadas ou trecho inexistente.";
-        }
-    
+    @GetMapping("/solicitarPermissao")
+    public void solicitarPermissao(@RequestParam int servidorId, @RequestParam int clock) {
+        compraService.receberPermissao(servidorId, clock);
+    }
+
+    @GetMapping("/liberarPermissao")
+    public void liberarPermissao(@RequestParam int servidorId) {
+    }
+    @PostMapping("/ack")
+public ResponseEntity<String> receberAck(@RequestBody Map<String, Integer> ackData) {
+    Integer servidorId = ackData.get("servidorId");
+    Integer clock = ackData.get("clock");
+
+    System.out.println("ACK recebido de servidorId: " + servidorId + ", clock: " + clock);
+
+    return ResponseEntity.ok("ACK recebido");
+}
 
 }
