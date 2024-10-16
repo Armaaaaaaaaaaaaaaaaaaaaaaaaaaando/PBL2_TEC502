@@ -29,9 +29,9 @@ public class ClienteRestDistribuido {
     public static void main(String[] args) {
     
         String[] servidores = {
+                "http://localhost:8081", 
                 "http://localhost:8082", 
-                "http://localhost:8082", 
-                "http://localhost:8082"  
+                "http://localhost:8083"  
         };
 
         // Dados pode ser alterado
