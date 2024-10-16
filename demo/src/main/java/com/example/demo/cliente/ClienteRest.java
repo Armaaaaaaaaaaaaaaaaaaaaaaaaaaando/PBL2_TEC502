@@ -2,8 +2,8 @@ package com.example.demo.cliente;
 
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ClienteRest {
 
@@ -15,39 +15,39 @@ public class ClienteRest {
         this.servidorUrl = servidorUrl;
     }
 
-    public void listarTrechos() {
-        String url = servidorUrl + "/api/trechos";
-        ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
-        System.out.println("Trechos disponíveis:\n" + response.getBody());
-    }
-    //retirar talvez...
+    // Método para comprar passagem
     public void comprarPassagem(String origem, String destino) {
         String url = servidorUrl + "/api/comprar?origem=" + origem + "&destino=" + destino;
-        ResponseEntity<String> response = restTemplate.postForEntity(url, null, String.class);
-        System.out.println(response.getBody());
+        try {
+            ResponseEntity<String> response = restTemplate.postForEntity(url, null, String.class);
+            System.out.println("Resultado da compra: " + response.getBody());
+        } catch (Exception e) {
+            System.out.println("Erro ao tentar comprar: " + e.getMessage());
+        }
+    }
+
+    // Método para realizar múltiplas compras simultâneas
+    public void realizarComprasSimultaneas(String origem, String destino, int numeroDeCompras) {
+        ExecutorService executorService = Executors.newFixedThreadPool(10); // Cria um pool de 10 threads
+        for (int i = 0; i < numeroDeCompras; i++) {
+            int finalI = i;
+            executorService.submit(() -> {
+                System.out.println("Realizando compra #" + (finalI + 1));
+                comprarPassagem(origem, destino);
+            });
+        }
+        executorService.shutdown(); // Fecha o pool de threads
     }
 
     public static void main(String[] args) {
         String servidorUrl = "http://localhost:8082"; // URL do servidor
         ClienteRest cliente = new ClienteRest(servidorUrl);
-        System.out.println("Antes da compra");
-        cliente.listarTrechos();
-        cliente.comprar("Salvador", "Recife");
 
-        System.out.println("Depois da compra");
-        cliente.listarTrechos();
-    }
+        // Testar múltiplas compras 
+        String origem = "Manaus";
+        String destino = "Belem";
+        int numeroDeCompras = 1; // Num de compras simultâneas
 
-
-    public void comprar(String origem, String destino){
-        String url = servidorUrl+"/api/comprar";
-
-        MultiValueMap<String,String> parametros = new LinkedMultiValueMap<>();
-        parametros.add("origem", origem);
-        parametros.add("destino",destino);
-
-
-        ResponseEntity<String> response = restTemplate.postForEntity(url, parametros, String.class);
-        System.out.println(response.getBody());
+        cliente.realizarComprasSimultaneas(origem, destino, numeroDeCompras);
     }
 }
