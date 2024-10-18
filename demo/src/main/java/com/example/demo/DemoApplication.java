@@ -21,7 +21,7 @@ public class DemoApplication {
     private static void startServer(String serverId, int port) {
         new SpringApplicationBuilder(DemoApplication.class)
                 .properties("server.port=" + port, "server.id=" + serverId)
-                .web(WebApplicationType.SERVLET) // Definimos como aplicativo web
+                .web(WebApplicationType.SERVLET)
                 .run();
     }
 

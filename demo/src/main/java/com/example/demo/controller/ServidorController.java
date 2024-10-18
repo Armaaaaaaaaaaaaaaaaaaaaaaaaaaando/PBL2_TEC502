@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
 @RestController
 @RequestMapping("/api")
 public class ServidorController {
@@ -36,22 +35,19 @@ public class ServidorController {
         return compraService.comprar(origem, destino);
     }
 
-    @GetMapping("/solicitarPermissao")
-    public void solicitarPermissao(@RequestParam int servidorId, @RequestParam int clock) {
-        compraService.receberPermissao(servidorId, clock);
-    }
-
     @GetMapping("/liberarPermissao")
     public void liberarPermissao(@RequestParam int servidorId) {
+        compraService.liberarToken(); // Libera o token para o próximo servidor
     }
-    @PostMapping("/ack")
-public ResponseEntity<String> receberAck(@RequestBody Map<String, Integer> ackData) {
-    Integer servidorId = ackData.get("servidorId");
-    Integer clock = ackData.get("clock");
+    
+    @GetMapping("/receberToken")
+    public void receberToken() {
+        compraService.receberToken(); // Recebe o token
+    }
 
-    System.out.println("ACK recebido de servidorId: " + servidorId + ", clock: " + clock);
-
-    return ResponseEntity.ok("ACK recebido");
-}
-
+    @PostMapping("/atualizarTrecho")
+    public ResponseEntity<String> atualizarTrecho(@RequestBody Trecho trecho) {
+        compraService.getAll().put(trecho.getOrigem() + "-" + trecho.getDestino(), trecho);
+        return ResponseEntity.ok("Trecho atualizado com sucesso.");
+    }
 }

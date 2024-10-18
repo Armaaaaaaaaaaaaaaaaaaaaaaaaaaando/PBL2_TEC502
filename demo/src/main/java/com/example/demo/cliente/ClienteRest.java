@@ -40,12 +40,12 @@ public class ClienteRest {
     }
 
     public static void main(String[] args) {
-        String servidorUrl = "http://localhost:8082"; // URL do servidor
+        String servidorUrl = "http://localhost:8081"; // URL do servidor
         ClienteRest cliente = new ClienteRest(servidorUrl);
 
         // Testar múltiplas compras 
-        String origem = "Manaus";
-        String destino = "Belem";
+        String origem = "Sao Paulo";
+        String destino = "Brasilia";
         int numeroDeCompras = 1; // Num de compras simultâneas
 
         cliente.realizarComprasSimultaneas(origem, destino, numeroDeCompras);

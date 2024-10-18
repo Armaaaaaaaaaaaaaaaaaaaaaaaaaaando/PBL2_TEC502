@@ -1,55 +1,39 @@
 package com.example.demo.service;
 
 import com.example.demo.model.Trecho;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class CompraService {
 
     private ConcurrentHashMap<String, Trecho> trechos = new ConcurrentHashMap<>();
     private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
 
-    // Variáveis para o algoritmo de Lamport
-    private Set<String> servidores;
+    // Variáveis para o algoritmo de Token Ring
+    private List<String> servidores;
     private int idServidor;
-    private int clock = 0;  // Relógio lógico de Lamport
-    private boolean emSecaoCritica = false;
-    private Map<Integer, Boolean> respostasRecebidas = new HashMap<>();
-    
-    // Fila para armazenar pedidos ordenados por timestamp
-    private PriorityQueue<Pedido> filaPedidos = new PriorityQueue<>(Comparator.comparingInt(Pedido::getClock));
-
-    class Pedido {
-        private int idServidor;
-        private int clock;
-
-        public Pedido(int idServidor, int clock) {
-            this.idServidor = idServidor;
-            this.clock = clock;
-        }
-
-        public int getIdServidor() {
-            return idServidor;
-        }
-
-        public int getClock() {
-            return clock;
-        }
-    }
+    private String tokenHolder;
 
     @Autowired
-    public CompraService(RestTemplate restTemplate) {
+    public CompraService(RestTemplate restTemplate, ObjectMapper objectMapper, Environment  env) {
         this.restTemplate = restTemplate;
-        this.servidores = new HashSet<>(Arrays.asList("http://localhost:8081", "http://localhost:8082", "http://localhost:8083"));
-        this.idServidor = 8082;  // ID deste servidor 
+        this.objectMapper = objectMapper;
+        this.servidores = Arrays.asList("http://localhost:8081", "http://localhost:8082", "http://localhost:8083");
+        this.idServidor = Integer.parseInt(env.getProperty("server.port")); 
+        this.tokenHolder = servidores.get(0);
     }
-
+    
 
     public ConcurrentHashMap<String, Trecho> getAllTrechos() {
         ConcurrentHashMap<String, Trecho> todosOsTrechos = new ConcurrentHashMap<>(trechos);
@@ -59,23 +43,26 @@ public class CompraService {
             adicionarTrechosDeOutroServidor(todosOsTrechos, servidor + "/api/trecho");
         }
 
+        System.out.println("Todos os trechos: " + todosOsTrechos);
         return todosOsTrechos;
     }
 
-
     private void adicionarTrechosDeOutroServidor(ConcurrentHashMap<String, Trecho> todosOsTrechos, String url) {
         try {
-            ResponseEntity<ConcurrentHashMap> response = restTemplate.getForEntity(url, ConcurrentHashMap.class);
-            ConcurrentHashMap<String, Trecho> trechosDeOutroServidor = response.getBody();
+            ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+            Map<String, Object> trechosDeOutroServidor = response.getBody();
+
             if (trechosDeOutroServidor != null) {
-                todosOsTrechos.putAll(trechosDeOutroServidor);
+                for (Map.Entry<String, Object> entry : trechosDeOutroServidor.entrySet()) {
+                    String chave = entry.getKey();
+                    Trecho trecho = objectMapper.convertValue(entry.getValue(), Trecho.class);
+                    todosOsTrechos.put(chave, trecho);
+                }
             }
         } catch (Exception e) {
             System.err.println("Erro ao comunicar com o servidor: " + url + " - " + e.getMessage());
         }
     }
-
-
 
     public ConcurrentHashMap<String, Trecho> getAll() {
         return trechos;
@@ -83,15 +70,16 @@ public class CompraService {
 
     public String comprar(String origem, String destino) {
         String conteudo = origem + "-" + destino;
+        System.out.println("antes de solicitar= " + conteudo);
     
-        // Solicita permissão para os outros servidores
-        solicitarPermissao();   
+        // Solicita permissão para acessar a seção crítica
+        solicitarToken();
     
-        // Aguarda todas as respostas antes de acessar a seção crítica
+        // Aguarda o token para acessar a seção crítica
         synchronized (this) {
-            while (!todasRespostasRecebidas()) {
+            while (!tokenHolder.equals("http://localhost:" + idServidor)) {
                 try {
-                    wait(); // Aguarda até receber as respostas
+                    wait(); // Aguarda até receber o token
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                     return "Falha: interrupção na espera.";
@@ -99,32 +87,57 @@ public class CompraService {
             }
         }
     
-        //seção crítica
+        System.out.println("depois de pegar o token= " + conteudo);
+        System.out.println("todos os trechos sao assim= " + trechos);
+    
+        String resposta = null;
+    
+        // Seção crítica
         synchronized (this) {
-            emSecaoCritica = true;
-    
             System.out.println("Acesso à seção crítica");
-            Trecho trecho = trechos.get(conteudo);
-            
-            if (verificarTrechoLocal(trecho)) {
-                return "Venda feita: " + origem + " -> " + destino;
-            }
     
-            // Se o trecho não foi encontrado localmente, tenta reservar em outro servidor
-            String resposta = tentarComprarEmOutrosServidores(origem, destino);
-            liberarPermissao();
-            emSecaoCritica = false;
-            
-            return resposta != null ? resposta : "Falha: trecho não encontrado";
+            ConcurrentHashMap<String, Trecho> todosOsTrechos = getAllTrechos();
+            Trecho trecho = todosOsTrechos.get(conteudo);
+            System.out.println("resultado do trecho=" + trecho);
+    
+            if (verificarTrechoLocal(trecho)) {
+                resposta = "Venda feita: " + origem + " -> " + destino;
+            } else {
+                System.out.println("Deu ruim");
+                resposta = tentarComprarEmOutrosServidores(origem, destino);
+            }
         }
+    
+        // Libera o token APÓS a compra ter sido confirmada
+        liberarToken();
+    
+        return resposta != null ? resposta : "Falha: trecho não encontrado";
     }
-
+    
     private boolean verificarTrechoLocal(Trecho trecho) {
         if (trecho != null && trecho.getPassagensDisponiveis() > 0) {
             trecho.setPassagensDisponiveis(trecho.getPassagensDisponiveis() - 1);
+
+            // Atualiza os outros servidores
+            atualizarTrechosEmTodosOsServidores(trecho);
+
             return true;
         }
         return false;
+    }
+
+    private void atualizarTrechosEmTodosOsServidores(Trecho trecho) {
+        for (String servidor : servidores) {
+            if (!servidor.contains(String.valueOf(idServidor))) {
+                String url = servidor + "/api/atualizarTrecho";
+                try {
+                    restTemplate.postForObject(url, trecho, String.class);
+                    System.out.println("Trecho atualizado no servidor: " + servidor);
+                } catch (Exception e) {
+                    System.err.println("Erro ao atualizar trecho no servidor: " + servidor + " - " + e.getMessage());
+                }
+            }
+        }
     }
 
     private String tentarComprarEmOutrosServidores(String origem, String destino) {
@@ -144,75 +157,48 @@ public class CompraService {
         return null;
     }
 
-    // Algoritmo de Lamport primeiro solicita permissão
-    private void solicitarPermissao() {
-        clock++; // Incrementa o relógio antes de enviar o pedido
-        Pedido pedido = new Pedido(idServidor, clock);
-        filaPedidos.add(pedido);
+    private void solicitarToken() {
+        if (!tokenHolder.equals("http://localhost:" + idServidor)) {
+            String proximoServidor = getProximoServidor();
     
-        // Envia pedido para todos os servidores
-        for (String servidor : servidores) {
-            if (!servidor.contains(String.valueOf(idServidor))) {
-                String url = servidor + "/api/solicitarPermissao?servidorId=" + idServidor + "&clock=" + clock;
-                try {
-                    restTemplate.getForEntity(url, String.class);
-                } catch (Exception e) {
-                    System.err.println("Erro ao solicitar permissão: " + servidor + " - " + e.getMessage());
-                }
-            }
-        }
-    }
-
-    public synchronized void receberPermissao(int idServidorRemoto, int clockRemoto) {
-        clock = Math.max(clock, clockRemoto) + 1; // Atualiza o relógio local
-        Pedido pedidoRemoto = new Pedido(idServidorRemoto, clockRemoto);
-        filaPedidos.add(pedidoRemoto);
-
-        // Atualiza a contagem de respostas recebidas
-        respostasRecebidas.put(idServidorRemoto, true); // Registra que recebemos a resposta do servidor remoto
-
-        // Notifica os threads que estão esperando
-        notifyAll();
-
-        // Responde com acknowledgment
-        enviarAck(idServidorRemoto);
-    }
-
-
-   // Enviar acknowledgment (ACK)
-    private void enviarAck(int idServidorRemoto) {
-    String url = "http://localhost:" + idServidorRemoto + "/api/ack";
-    try {
-        Map<String, Integer> ackData = new HashMap<>();
-        ackData.put("servidorId", idServidor);
-        ackData.put("clock", clock);
-
-        // Envia o ACK usando POST
-        restTemplate.postForEntity(url, ackData, String.class);
-        } catch (Exception e) {
-            System.err.println("Erro ao enviar ACK: " + url + " - " + e.getMessage());
-        }
-    }
-
-    //Ta dando problema aqui, nao ta retornando true pra liberar o acesso
-    private boolean todasRespostasRecebidas() {
-        return true;
-       // return respostasRecebidas.size() == servidores.size() -1; // Exclui o próprio servidor
-        
-    }
-
-    private void liberarPermissao() {
-        filaPedidos.poll(); // Remove o próprio pedido da fila
-    
-        // Notifica todos os servidores que liberou a seção crítica
-        for (String servidor : servidores) {
-            String url = servidor + "/api/liberarPermissao?servidorId=" + idServidor;
+            // Solicita o token ao próximo servidor
+            String url = proximoServidor + "/api/pedirToken";
             try {
                 restTemplate.getForEntity(url, String.class);
+                synchronized (this) {
+                    wait(5000); // Espera um tempo limitado
+                }
             } catch (Exception e) {
-                System.err.println("Erro ao liberar permissão: " + servidor + " - " + e.getMessage());
+                System.err.println("Erro ao solicitar token: " + url + " - " + e.getMessage());
             }
         }
-        emSecaoCritica = false;
     }
+    
+
+    public void liberarToken() {
+        String proximoServidor = getProximoServidor();
+        tokenHolder = proximoServidor; // Atualiza o holder para o próximo servidor
+        String url = proximoServidor + "/api/receberToken";
+    
+        try {
+            restTemplate.getForEntity(url, String.class);
+            System.out.println("Token liberado para: " + proximoServidor);
+        } catch (Exception e) {
+            System.err.println("Erro ao liberar token: " + url + " - " + e.getMessage());
+        }
+    }
+    
+
+    private String getProximoServidor() {
+        int indiceAtual = servidores.indexOf("http://localhost:" + idServidor);
+        int proximoIndice = (indiceAtual + 1) % servidores.size();
+        return servidores.get(proximoIndice);
+    }
+
+    public synchronized void receberToken() {
+    tokenHolder = "http://localhost:" + idServidor;
+    notifyAll(); // Notifica 
+    System.out.println("Token recebido pelo servidor " + idServidor);
+}
+
 }
