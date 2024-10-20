@@ -33,7 +33,7 @@ public class DemoApplication {
             AdicionarCidades adicionarCidades = context.getBean(AdicionarCidades.class);
 
             if (serverId.equals("1")) {
-                adicionarCidades.adicionarCidade("Sao Paulo", "Rio de Janeiro", 10L,serverId);
+                adicionarCidades.adicionarCidade("Brasilia", "Rio de Janeiro", 10L,serverId);
                 adicionarCidades.adicionarCidade("Sao Paulo", "Brasilia", 10L,serverId);
             } else if (serverId.equals("2")) {
                 adicionarCidades.adicionarCidade("Salvador", "Recife", 15L,serverId);

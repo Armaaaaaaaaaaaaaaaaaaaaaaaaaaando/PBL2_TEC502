@@ -26,6 +26,17 @@ public class ClienteRest {
         }
     }
 
+    // Método para montar a rota
+    public void montarRota(String origem, String destino) {
+        String url = servidorUrl + "/api/montarRota?origem=" + origem + "&destino=" + destino;
+        try {
+            ResponseEntity<String> response = restTemplate.postForEntity(url, null, String.class);
+            System.out.println("Resultado da montagem da rota: " + response.getBody());
+        } catch (Exception e) {
+            System.out.println("Erro ao tentar montar a rota: " + e.getMessage());
+        }
+    }
+
     // Método para realizar múltiplas compras simultâneas
     public void realizarComprasSimultaneas(String origem, String destino, int numeroDeCompras) {
         ExecutorService executorService = Executors.newFixedThreadPool(10); // Cria um pool de 10 threads
@@ -48,6 +59,9 @@ public class ClienteRest {
         String destino = "Brasilia";
         int numeroDeCompras = 1; // Num de compras simultâneas
 
-        cliente.realizarComprasSimultaneas(origem, destino, numeroDeCompras);
+        //cliente.realizarComprasSimultaneas(origem, destino, numeroDeCompras);
+        
+        // Testar montagem de rota
+        cliente.montarRota("Sao Paulo", "Rio de Janeiro");
     }
 }
