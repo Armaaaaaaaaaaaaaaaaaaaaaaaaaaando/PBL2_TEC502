@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 @RestController
@@ -49,5 +50,11 @@ public class ServidorController {
     public ResponseEntity<String> atualizarTrecho(@RequestBody Trecho trecho) {
         compraService.getAll().put(trecho.getOrigem() + "-" + trecho.getDestino(), trecho);
         return ResponseEntity.ok("Trecho atualizado com sucesso.");
+    }
+
+    @PostMapping("/montarRota")
+    public ResponseEntity<List<List<Trecho>>> montarRota(@RequestParam String origem, @RequestParam String destino) {
+        List<List<Trecho>> rotas = compraService.montarRota(origem, destino);
+        return ResponseEntity.ok(rotas);
     }
 }
