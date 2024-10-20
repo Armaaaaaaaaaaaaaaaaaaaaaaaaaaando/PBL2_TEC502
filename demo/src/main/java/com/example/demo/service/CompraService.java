@@ -24,16 +24,19 @@ public class CompraService {
     private List<String> servidores;
     private int idServidor;
     private String tokenHolder;
+    private long tokenTimeout = 10000; // 10 segundos de timeout para o token
+    private long ultimaAtualizacaoToken;
 
     @Autowired
-    public CompraService(RestTemplate restTemplate, ObjectMapper objectMapper, Environment  env) {
+    public CompraService(RestTemplate restTemplate, ObjectMapper objectMapper, Environment env) {
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
         this.servidores = Arrays.asList("http://localhost:8081", "http://localhost:8082", "http://localhost:8083");
-        this.idServidor = Integer.parseInt(env.getProperty("server.port")); 
+        this.idServidor = Integer.parseInt(env.getProperty("server.port"));
         this.tokenHolder = servidores.get(0);
+        // Inicializa a tarefa de repasse contínuo do token
+        iniciarRepasseContinualToken();
     }
-    
 
     public ConcurrentHashMap<String, Trecho> getAllTrechos() {
         ConcurrentHashMap<String, Trecho> todosOsTrechos = new ConcurrentHashMap<>(trechos);
@@ -71,49 +74,145 @@ public class CompraService {
     public String comprar(String origem, String destino) {
         String conteudo = origem + "-" + destino;
         System.out.println("antes de solicitar= " + conteudo);
-    
-        // Solicita permissão para acessar a seção crítica
+
         solicitarToken();
-    
-        // Aguarda o token para acessar a seção crítica
+
         synchronized (this) {
+            long tempoInicio = System.currentTimeMillis();
             while (!tokenHolder.equals("http://localhost:" + idServidor)) {
                 try {
-                    wait(); // Aguarda até receber o token
+                    wait(5000); // Timeout de 5 segundos
+                    if (System.currentTimeMillis() - tempoInicio > tokenTimeout) {
+                        System.err.println("Timeout ao esperar pelo token.");
+                        return "Falha: timeout na espera pelo token.";
+                    }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                     return "Falha: interrupção na espera.";
                 }
             }
         }
-    
+
         System.out.println("depois de pegar o token= " + conteudo);
         System.out.println("todos os trechos sao assim= " + trechos);
-    
+
         String resposta = null;
-    
-        // Seção crítica
+
         synchronized (this) {
             System.out.println("Acesso à seção crítica");
-    
+
             ConcurrentHashMap<String, Trecho> todosOsTrechos = getAllTrechos();
             Trecho trecho = todosOsTrechos.get(conteudo);
             System.out.println("resultado do trecho=" + trecho);
-    
+
             if (verificarTrechoLocal(trecho)) {
                 resposta = "Venda feita: " + origem + " -> " + destino;
             } else {
-                System.out.println("Deu ruim");
                 resposta = tentarComprarEmOutrosServidores(origem, destino);
             }
         }
-    
-        // Libera o token APÓS a compra ter sido confirmada
+
         liberarToken();
-    
         return resposta != null ? resposta : "Falha: trecho não encontrado";
     }
+
+    public void solicitarToken() {
+        int maxTentativas = 5; // Número de tentativas
+        int intervaloEntreTentativas = 2000; // 2 segundos entre cada tentativa
+        long tempoInicio = System.currentTimeMillis();
+        boolean tokenObtido = false;
     
+        for (int i = 0; i < maxTentativas; i++) {
+            if (tokenHolder.equals("http://localhost:" + idServidor)) {
+                tokenObtido = true;
+                break;  // Token já está no servidor atual, não precisa solicitar
+            }
+    
+            String proximoServidor = getProximoServidor();
+            String url = proximoServidor + "/api/pedirToken";
+    
+            try {
+                System.out.println("Tentando solicitar token de: " + proximoServidor);
+                restTemplate.getForEntity(url, String.class);
+    
+                synchronized (this) {
+                    // Espera por até 5 segundos para ver se o token foi recebido
+                    wait(5000);
+                }
+    
+                if (tokenHolder.equals("http://localhost:" + idServidor)) {
+                    tokenObtido = true;
+                    break;  // Token recebido 
+                }
+    
+            } catch (Exception e) {
+                System.err.println("Erro ao tentar solicitar o token: " + e.getMessage());
+            }
+    
+            if (System.currentTimeMillis() - tempoInicio > tokenTimeout) {
+                System.err.println("Timeout ao solicitar token. Tentativas esgotadas.");
+                break;
+            }
+    
+            // Espera pra ir novamente
+            try {
+                Thread.sleep(intervaloEntreTentativas);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();  // Restabelece o estado de interrupção
+                System.err.println("Thread interrompida durante o intervalo entre tentativas.");
+                break;
+            }
+        }
+    
+        if (!tokenObtido) {
+            System.err.println("Falha: não foi possível obter o token após várias tentativas.");
+        } else {
+            System.out.println("Token obtido com sucesso pelo servidor " + idServidor);
+        }
+    }
+    
+
+    public void liberarToken() {
+        String proximoServidor = getProximoServidor();
+        tokenHolder = proximoServidor;
+        ultimaAtualizacaoToken = System.currentTimeMillis();
+        String url = proximoServidor + "/api/receberToken";
+
+        try {
+            restTemplate.getForEntity(url, String.class);
+            System.out.println("Token liberado para: " + proximoServidor);
+        } catch (Exception e) {
+            System.err.println("Erro ao liberar token: " + url + " - " + e.getMessage());
+        }
+    }
+
+    private String getProximoServidor() {
+        int indiceAtual = servidores.indexOf("http://localhost:" + idServidor);
+        int proximoIndice = (indiceAtual + 1) % servidores.size();
+        return servidores.get(proximoIndice);
+    }
+
+    public synchronized void receberToken() {
+        tokenHolder = "http://localhost:" + idServidor;
+        notifyAll(); // Notifica todos os clientes que estão esperando o token
+        ultimaAtualizacaoToken = System.currentTimeMillis();
+        System.out.println("Token recebido pelo servidor " + idServidor);
+    }
+
+    private void iniciarRepasseContinualToken() {
+        Timer timer = new Timer();
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                // Verifica se o token está parado por muito tempo
+                if (System.currentTimeMillis() - ultimaAtualizacaoToken > tokenTimeout) {
+                    liberarToken();  // Libera o token automaticamente
+                }
+            }
+        }, tokenTimeout, tokenTimeout);  // Verifica e repassa a cada tokenTimeout
+    }
+
+
     private boolean verificarTrechoLocal(Trecho trecho) {
         if (trecho != null && trecho.getPassagensDisponiveis() > 0) {
             trecho.setPassagensDisponiveis(trecho.getPassagensDisponiveis() - 1);
@@ -157,48 +256,47 @@ public class CompraService {
         return null;
     }
 
-    private void solicitarToken() {
-        if (!tokenHolder.equals("http://localhost:" + idServidor)) {
-            String proximoServidor = getProximoServidor();
-    
-            // Solicita o token ao próximo servidor
-            String url = proximoServidor + "/api/pedirToken";
-            try {
-                restTemplate.getForEntity(url, String.class);
-                synchronized (this) {
-                    wait(5000); // Espera um tempo limitado
+
+
+    public List<List<Trecho>> montarRota(String origem, String destino) {
+        ConcurrentHashMap<String, Trecho> todosOsTrechos = getAllTrechos();
+        Map<String, List<Trecho>> grafo = new HashMap<>();
+        System.out.println("olha todos os t rechos aqui="+ todosOsTrechos);
+
+        // Constrói o grafo de trechos a partir de todas as origens e destinos 
+        for (Trecho trecho : todosOsTrechos.values()) {
+            grafo.computeIfAbsent(trecho.getOrigem(), k -> new ArrayList<>()).add(trecho);
+        }
+
+        // BFS para encontrar todas as rotas 
+        Queue<List<Trecho>> fila = new LinkedList<>();
+        List<List<Trecho>> rotas = new ArrayList<>();
+
+        for (Trecho trecho : grafo.getOrDefault(origem, new ArrayList<>())) {
+            List<Trecho> caminhoInicial = new ArrayList<>();
+            caminhoInicial.add(trecho);
+            fila.add(caminhoInicial);
+        }
+
+        while (!fila.isEmpty()) {
+            List<Trecho> caminhoAtual = fila.poll();
+            Trecho ultimoTrecho = caminhoAtual.get(caminhoAtual.size() - 1);
+        
+            System.out.println("Verificando trecho atual: " + ultimoTrecho);
+        
+            if (ultimoTrecho.getDestino().equals(destino)) {
+                rotas.add(new ArrayList<>(caminhoAtual));
+                System.out.println("Rota encontrada: " + caminhoAtual);
+            } else {
+                for (Trecho proximoTrecho : grafo.getOrDefault(ultimoTrecho.getDestino(), new ArrayList<>())) {
+                    List<Trecho> novoCaminho = new ArrayList<>(caminhoAtual);
+                    novoCaminho.add(proximoTrecho);
+                    fila.add(novoCaminho);
                 }
-            } catch (Exception e) {
-                System.err.println("Erro ao solicitar token: " + url + " - " + e.getMessage());
             }
         }
+        System.out.println("cheguei aqui no final pra montar a rota.");
+        System.out.println("rotas montadas="+rotas);
+        return rotas;
     }
-    
-
-    public void liberarToken() {
-        String proximoServidor = getProximoServidor();
-        tokenHolder = proximoServidor; // Atualiza o holder para o próximo servidor
-        String url = proximoServidor + "/api/receberToken";
-    
-        try {
-            restTemplate.getForEntity(url, String.class);
-            System.out.println("Token liberado para: " + proximoServidor);
-        } catch (Exception e) {
-            System.err.println("Erro ao liberar token: " + url + " - " + e.getMessage());
-        }
-    }
-    
-
-    private String getProximoServidor() {
-        int indiceAtual = servidores.indexOf("http://localhost:" + idServidor);
-        int proximoIndice = (indiceAtual + 1) % servidores.size();
-        return servidores.get(proximoIndice);
-    }
-
-    public synchronized void receberToken() {
-    tokenHolder = "http://localhost:" + idServidor;
-    notifyAll(); // Notifica 
-    System.out.println("Token recebido pelo servidor " + idServidor);
-}
-
 }
