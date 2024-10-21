@@ -120,56 +120,51 @@ public class CompraService {
         int maxTentativas = 5; // Número de tentativas
         int intervaloEntreTentativas = 2000; // 2 segundos entre cada tentativa
         long tempoInicio = System.currentTimeMillis();
-        boolean tokenObtido = false;
     
         for (int i = 0; i < maxTentativas; i++) {
-            if (tokenHolder.equals("http://localhost:" + idServidor)) {
-                tokenObtido = true;
-                break;  // Token já está no servidor atual, não precisa solicitar
-            }
-    
-            String proximoServidor = getProximoServidor();
-            String url = proximoServidor + "/api/pedirToken";
-    
-            try {
-                System.out.println("Tentando solicitar token de: " + proximoServidor);
-                restTemplate.getForEntity(url, String.class);
-    
-                synchronized (this) {
-                    // Espera por até 5 segundos para ver se o token foi recebido
-                    wait(5000);
-                }
-    
+            synchronized (this) {
+                // Se o token já está com este servidor, retorna
                 if (tokenHolder.equals("http://localhost:" + idServidor)) {
-                    tokenObtido = true;
-                    break;  // Token recebido 
+                    System.out.println("Token já está com o servidor " + idServidor);
+                    return; // Já possui o token
                 }
     
-            } catch (Exception e) {
-                System.err.println("Erro ao tentar solicitar o token: " + e.getMessage());
+                // Se não possui o token, aguarda até que o próximo servidor libere o token
+                try {
+                    System.out.println("Esperando pelo token...");
+                    wait(tokenTimeout); // Aguarda o token por um tempo definido
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt(); // Restaura o estado de interrupção
+                    System.err.println("Thread interrompida durante a espera pelo token.");
+                    return; // Sai do método em caso de interrupção
+                }
+    
+                // Após o wait, verifica se o token foi recebido
+                if (tokenHolder.equals("http://localhost:" + idServidor)) {
+                    System.out.println("Token obtido com sucesso pelo servidor " + idServidor);
+                    return; // Token recebido
+                }
             }
     
+            // Espera antes de tentar novamente
+            try {
+                Thread.sleep(intervaloEntreTentativas);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt(); // Restaura o estado de interrupção
+                System.err.println("Thread interrompida durante o intervalo entre tentativas.");
+                break;
+            }
+    
+            // Verifica se o tempo de espera excedeu o limite
             if (System.currentTimeMillis() - tempoInicio > tokenTimeout) {
                 System.err.println("Timeout ao solicitar token. Tentativas esgotadas.");
                 break;
             }
-    
-            // Espera pra ir novamente
-            try {
-                Thread.sleep(intervaloEntreTentativas);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();  // Restabelece o estado de interrupção
-                System.err.println("Thread interrompida durante o intervalo entre tentativas.");
-                break;
-            }
         }
     
-        if (!tokenObtido) {
-            System.err.println("Falha: não foi possível obter o token após várias tentativas.");
-        } else {
-            System.out.println("Token obtido com sucesso pelo servidor " + idServidor);
-        }
+        System.err.println("Falha: não foi possível obter o token após várias tentativas.");
     }
+    
     
 
     public void liberarToken() {
