@@ -40,7 +40,12 @@ public class ServidorController {
     public void liberarPermissao(@RequestParam int servidorId) {
         compraService.liberarToken(); // Libera o token para o próximo servidor
     }
-    
+
+    @GetMapping("/heartbeat")
+    public ResponseEntity<String> heartbeat() {
+        return ResponseEntity.ok("OK");
+    }
+
     @GetMapping("/receberToken")
     public void receberToken() {
         compraService.receberToken(); // Recebe o token

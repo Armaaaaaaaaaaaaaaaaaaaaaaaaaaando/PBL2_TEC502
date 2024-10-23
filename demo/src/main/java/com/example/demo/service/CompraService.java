@@ -26,6 +26,9 @@ public class CompraService {
     private String tokenHolder;
     private long tokenTimeout = 10000; // 10 segundos de timeout para o token
     private long ultimaAtualizacaoToken;
+    private ConcurrentHashMap<String, Boolean> estadoServidores = new ConcurrentHashMap<>(); // Estado dos servidores
+    private Timer heartbeatTimer = new Timer(); //  para os heartbeats
+
 
     @Autowired
     public CompraService(RestTemplate restTemplate, ObjectMapper objectMapper, Environment env) {
@@ -36,6 +39,9 @@ public class CompraService {
         this.tokenHolder = servidores.get(0);
         // Inicializa a tarefa de repasse contínuo do token
         iniciarRepasseContinualToken();
+
+        iniciarHeartbeats();
+
     }
 
     public ConcurrentHashMap<String, Trecho> getAllTrechos() {
@@ -184,8 +190,17 @@ public class CompraService {
     private String getProximoServidor() {
         int indiceAtual = servidores.indexOf("http://localhost:" + idServidor);
         int proximoIndice = (indiceAtual + 1) % servidores.size();
-        return servidores.get(proximoIndice);
+        String proximoServidor = servidores.get(proximoIndice);
+    
+        // Verifica se o próximo servidor está ativo
+        while (!estadoServidores.getOrDefault(proximoServidor, false)) {
+            proximoIndice = (proximoIndice + 1) % servidores.size();
+            proximoServidor = servidores.get(proximoIndice);
+        }
+    
+        return proximoServidor;
     }
+    
 
     public synchronized void receberToken() {
         tokenHolder = "http://localhost:" + idServidor;
@@ -293,5 +308,32 @@ public class CompraService {
         System.out.println("cheguei aqui no final pra montar a rota.");
         System.out.println("rotas montadas="+rotas);
         return rotas;
+    }
+
+    private void iniciarHeartbeats() {
+        long intervaloHeartbeat = 5000; // Enviar heartbeat a cada 5 segundos
+
+        heartbeatTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                for (String servidor : servidores) {
+                    if (!servidor.contains(String.valueOf(idServidor))) {
+                        verificarHeartbeat(servidor);
+                    }
+                }
+            }
+        }, 0, intervaloHeartbeat);
+    }
+
+    private void verificarHeartbeat(String servidor) {
+        String url = servidor + "/api/heartbeat";
+        try {
+            restTemplate.getForEntity(url, String.class);
+            estadoServidores.put(servidor, true); // Servidor está ativo
+            System.out.println("Servidor ativo: " + servidor);
+        } catch (Exception e) {
+            estadoServidores.put(servidor, false); // Servidor inativo
+            System.err.println("Falha no heartbeat do servidor: " + servidor + " - " + e.getMessage());
+        }
     }
 }
