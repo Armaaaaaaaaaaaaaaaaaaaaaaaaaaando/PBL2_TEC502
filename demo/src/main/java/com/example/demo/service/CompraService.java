@@ -312,28 +312,58 @@ public class CompraService {
 
     private void iniciarHeartbeats() {
         long intervaloHeartbeat = 5000; // Enviar heartbeat a cada 5 segundos
-
+    
         heartbeatTimer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
                 for (String servidor : servidores) {
-                    if (!servidor.contains(String.valueOf(idServidor))) {
-                        verificarHeartbeat(servidor);
+                    if (!servidor.contains(String.valueOf(idServidor))) {  // Não verifica o próprio servidor
+                        try {
+                            restTemplate.getForEntity(servidor + "/api/heartbeat", String.class);
+                            estadoServidores.put(servidor, true);  // Servidor está ativo
+                        } catch (Exception e) {
+                            System.err.println("Falha no heartbeat com o servidor: " + servidor);
+                            estadoServidores.put(servidor, false);  // Marca servidor como inativo
+    
+                            // Se o servidor que detém o token está inativo, precisamos regenerar o token
+                            if (tokenHolder.equals(servidor)) {
+                                System.out.println("Servidor com o token caiu: " + servidor);
+                                regenerarToken();  // Chama o método para regenerar o token
+                            }
+                        }
                     }
                 }
             }
         }, 0, intervaloHeartbeat);
     }
+    
 
-    private void verificarHeartbeat(String servidor) {
-        String url = servidor + "/api/heartbeat";
-        try {
-            restTemplate.getForEntity(url, String.class);
-            estadoServidores.put(servidor, true); // Servidor está ativo
-            System.out.println("Servidor ativo: " + servidor);
-        } catch (Exception e) {
-            estadoServidores.put(servidor, false); // Servidor inativo
-            System.err.println("Falha no heartbeat do servidor: " + servidor + " - " + e.getMessage());
+    private void regenerarToken() {
+        synchronized (this) {
+            // Encontra o próximo servidor ativo para segurar o token
+            for (String servidor : servidores) {
+                if (estadoServidores.getOrDefault(servidor, false)) {
+                    tokenHolder = servidor;
+                    ultimaAtualizacaoToken = System.currentTimeMillis();
+                    
+                    // Se este servidor for o escolhido para segurar o token
+                    if (servidor.equals("http://localhost:" + idServidor)) {
+                        System.out.println("Este servidor " + idServidor + " regenerou o token.");
+                        notifyAll();  // Notifica os threads esperando pelo token
+                    } else {
+                        // Passa o token para outro servidor
+                        try {
+                            String url = servidor + "/api/receberToken";
+                            restTemplate.getForEntity(url, String.class);
+                            System.out.println("Token regenerado e passado para o servidor: " + servidor);
+                        } catch (Exception e) {
+                            System.err.println("Erro ao regenerar o token para o servidor: " + servidor + " - " + e.getMessage());
+                        }
+                    }
+                    break;
+                }
+            }
         }
     }
+    
 }
