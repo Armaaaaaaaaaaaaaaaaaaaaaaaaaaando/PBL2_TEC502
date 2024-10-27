@@ -7,13 +7,20 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import ch.qos.logback.core.FileAppender;
+import java.io.FileReader;
 
-import org.json.JSONObject;
+
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+
 
 
 public class Arquivo {
     
     private static ConcurrentHashMap<String, Map<String, Map<String, Long>>> trechos;
+    
 
     // Construtor da classe
     public Arquivo() {
@@ -32,7 +39,10 @@ public class Arquivo {
 
 
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws org.apache.tomcat.util.json.ParseException, ParseException, IOException {
+       
+
+        
         //salva para o servidor 1
         String serverId = "1";
         Arquivo adicionador = new Arquivo();
@@ -53,6 +63,13 @@ public class Arquivo {
         adicionador.adicionarCidade("Manaus", "Belem", 8L,serverId);
         salvar("cidadesServer3.json");
         
+         // Caminho e nome do arquivo JSON
+         String caminhoPasta = "dados";
+         String nomeArquivo = "cidadesServer1.json";
+         File arquivoJSON = new File(caminhoPasta, nomeArquivo);
+         ler_cidades(arquivoJSON);
+
+
     }
 
 
@@ -84,4 +101,34 @@ public class Arquivo {
         }
 
     }
+    
+
+    public static void ler_cidades(File arquivoJSON) throws ParseException, IOException {
+        JSONParser parser = new JSONParser();  // Sem argumentos no construtor
+        ConcurrentHashMap<String, Map<String, Map<String, Long>>> vindo_arquivo;
+        
+         
+        try (FileReader leitor = new FileReader(arquivoJSON)) {
+            JSONObject jsonObject = (JSONObject) parser.parse(leitor);
+            vindo_arquivo = new ConcurrentHashMap<>();
+
+            
+            vindo_arquivo.putAll(jsonObject);
+
+            System.out.println(vindo_arquivo);
+
+
+
+        }
+        catch (IOException | ParseException e) {
+                e.printStackTrace();
+            }
+    }
+
+
+    
+
+
+
+    
 }
