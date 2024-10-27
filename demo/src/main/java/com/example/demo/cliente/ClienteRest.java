@@ -15,6 +15,16 @@ public class ClienteRest {
         this.servidorUrl = servidorUrl;
     }
 
+    public void todas_as_rotas(){
+        String url = servidorUrl + "/api/trechos";
+        try {
+            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+            System.out.println("Resultado da pesquisa: " + response.getBody());
+        } catch (Exception e) {
+            System.out.println("Erro ao tentar pesquisar: " + e.getMessage());
+        }
+    }
+
     // Método para comprar passagem
     public void comprarPassagem(String origem, String destino) {
         String url = servidorUrl + "/api/comprar?origem=" + origem + "&destino=" + destino;
@@ -55,13 +65,13 @@ public class ClienteRest {
         ClienteRest cliente = new ClienteRest(servidorUrl);
 
         // Testar múltiplas compras 
-        String origem = "Sao Paulo";
-        String destino = "Brasilia";
-        int numeroDeCompras = 1; // Num de compras simultâneas
-
+        //String origem = "Sao Paulo";
+       // String destino = "Brasilia";
+       // int numeroDeCompras = 1; // Num de compras simultâneas
+        cliente.todas_as_rotas();
         //cliente.realizarComprasSimultaneas(origem, destino, numeroDeCompras);
         
         // Testar montagem de rota
-        cliente.montarRota("Sao Paulo", "Rio de Janeiro");
+        //cliente.montarRota("Sao Paulo", "Rio de Janeiro");
     }
 }
