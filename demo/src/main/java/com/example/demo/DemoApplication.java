@@ -107,12 +107,10 @@ public class DemoApplication {
         if(cidades!= null){
             for(Map.Entry<String, Map<String, Map<String, Long>>> origem:  trechos_do_arquivo.entrySet()){
                 String cidade_origem = origem.getKey();
-                System.out.println("cidade origem: "+cidade_origem);
                 //tentar ver size para corrijir as cidades vazias
                 Map<String, Map<String, Long>> segundoMapa = origem.getValue();
                 for(Map.Entry<String, Map<String, Long>> destino : segundoMapa.entrySet()){
                     String cidade_destino = destino.getKey();
-                    System.out.println("cidade destino: "+cidade_destino);
                     Map<String, Long> terceiroMapa = destino.getValue();
 
                     for (Map.Entry<String, Long> id : terceiroMapa.entrySet()){
@@ -120,17 +118,15 @@ public class DemoApplication {
                         String serverID = id.getKey();
                         Long Qnt_passagens = id.getValue();
                         
-                        System.out.println("Id do server: "+serverID);
-                        //System.out.println(id.getValue());
-                        System.out.println("Quantidade de passagens: " + Qnt_passagens);
                         adicionarCidades.adicionarCidade(cidade_origem, cidade_destino, Qnt_passagens, serverID);
-                        System.out.println("adicionado com sucesso!!!!");
+                        
                     }
                     
                 }
                     
 
             }
+            System.out.println("adicionado com sucesso ao servidor!!!!");
         }
     }
 
