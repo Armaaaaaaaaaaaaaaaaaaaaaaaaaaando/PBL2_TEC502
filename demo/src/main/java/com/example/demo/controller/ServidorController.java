@@ -40,11 +40,6 @@ public String comprarPassagem(@RequestBody List<Trecho> rotaEscolhida) {
     return compraService.comprar(rotaEscolhida);
 }
 
-    @PostMapping("/comprarTrecho")
-public String comprarTrecho(@RequestParam String origem, @RequestParam String destino) {
-    return compraService.comprarTrechoIndividual(origem, destino);
-}
-
 
     @GetMapping("/liberarPermissao")
     public void liberarPermissao(@RequestParam int servidorId) {
@@ -65,11 +60,5 @@ public String comprarTrecho(@RequestParam String origem, @RequestParam String de
     public ResponseEntity<String> atualizarTrecho(@RequestBody Trecho trecho) {
         compraService.getAll().put(trecho.getOrigem() + "-" + trecho.getDestino(), trecho);
         return ResponseEntity.ok("Trecho atualizado com sucesso.");
-    }
-
-    @PostMapping("/montarRota")
-    public ResponseEntity<List<List<Trecho>>> montarRota(@RequestParam String origem, @RequestParam String destino) {
-        List<List<Trecho>> rotas = compraService.montarRota(origem, destino);
-        return ResponseEntity.ok(rotas);
     }
 }
