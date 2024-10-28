@@ -3,12 +3,17 @@ package com.example.demo.service;
 import com.example.demo.model.Trecho;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -110,13 +115,24 @@ public class CompraService {
                 }
             } else {
                 trechoLocal.setPassagensDisponiveis(trechoLocal.getPassagensDisponiveis() - 1); // Reserva localmente
+
+                
             }
         }
     
         if (sucessoNaCompra) {
             for (Trecho trecho : rotaEscolhida) {
                 atualizarTrechosEmTodosOsServidores(trecho);
+                if(trechos.containsKey(trecho.getOrigem()+"-"+trecho.getDestino())){
+                    Long pssg_de_atualização = trechos.get(trecho.getOrigem()+"-"+trecho.getDestino()).getPassagensDisponiveis(); 
+                    trecho.setPassagensDisponiveis(pssg_de_atualização);
+                }
             }
+
+            System.out.println(rotaEscolhida);
+            //aqui atualiza os trechos
+            atualizar_arquivos(rotaEscolhida);
+
             liberarToken();
             return "Compra realizada com sucesso para a rota: " + rotaEscolhida;
         } else {
@@ -274,6 +290,8 @@ public class CompraService {
             // Atualiza os outros servidores
             atualizarTrechosEmTodosOsServidores(trecho);
 
+            
+
             return true;
         }
         return false;
@@ -363,6 +381,65 @@ public class CompraService {
         }, 0, intervaloHeartbeat);
     }
     
+    private void atualizar_arquivos(List<Trecho> rotaEscolhida){
+        List<String> ID_s = new LinkedList<>();
+        ID_s.add("1");
+        ID_s.add("2");
+        ID_s.add("3");
+
+        for(String id : ID_s){
+            ConcurrentHashMap<String, Map<String, Map<String, Long>>> trechos_para_arquivo;
+            trechos_para_arquivo = organizardor_arquivo(id);                                  
+            salvar_no_arquivo("cidadesServer"+id+".json",trechos_para_arquivo);
+        }
+
+    }
+
+    public ConcurrentHashMap<String, Map<String, Map<String, Long>>> organizardor_arquivo(String Id_servidor){
+        ConcurrentHashMap<String, Map<String, Map<String, Long>>> trechos_para_arquivo = new ConcurrentHashMap<>();
+        for(Trecho trecho : trechos.values()){
+            if(trecho.getServidor().equals(Id_servidor)){
+                trechos_para_arquivo.putIfAbsent(trecho.getOrigem(), new HashMap<>());
+                Map<String, Long> detalhes = new HashMap<>();
+                detalhes.put(trecho.getServidor(), trecho.getPassagensDisponiveis());
+                trechos_para_arquivo.get(trecho.getOrigem()).put(trecho.getDestino(), detalhes);
+                trechos_para_arquivo.putIfAbsent(trecho.getDestino(), new HashMap<>());
+            }
+        }
+        return trechos_para_arquivo;
+
+    }
+
+    public static void salvar_no_arquivo(String nomedoArquivo,ConcurrentHashMap<String, Map<String, Map<String, Long>>> trechos_para_arquivo_1){
+        // Caminho e nome do arquivo JSON
+        String caminhoPasta = "dados";
+        File arquivoJSON = new File(caminhoPasta, nomedoArquivo);
+
+        File pasta = new File(caminhoPasta);
+        if (!pasta.exists()) {
+            if (pasta.mkdirs()) {
+                System.out.println("Pasta criada com sucesso.");
+            } else {
+                System.out.println("Falha ao criar a pasta.");
+                return;
+            }
+        }
+
+        // Converter HashMap para JSONObject e salvar em arquivo JSON
+        JSONObject jsonObject = new JSONObject(trechos_para_arquivo_1);
+
+        try (FileWriter file = new FileWriter(arquivoJSON)) {
+            file.write(jsonObject.toString());
+            file.flush();
+            System.out.println("HashMap salvo no arquivo JSON com sucesso em: " + arquivoJSON.getAbsolutePath());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+
+
 
     private void regenerarToken() {
         synchronized (this) {
