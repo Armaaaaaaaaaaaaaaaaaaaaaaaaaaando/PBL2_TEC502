@@ -389,6 +389,18 @@ public class CompraService {
 
     }
 
+    public String comprarTrechoIndividual(String origem, String destino) {
+        String chaveTrecho = origem + "-" + destino;
+        Trecho trechoLocal = trechos.get(chaveTrecho);
+    
+        // Verifica a disponibilidade local do trecho usando a chave de origem e destino
+        if (trechoLocal != null && trechoLocal.getPassagensDisponiveis() > 0) {
+            trechoLocal.setPassagensDisponiveis(trechoLocal.getPassagensDisponiveis() - 1);
+            return "Venda feita para o trecho: " + origem + " -> " + destino;
+        }
+        return "Falha: Sem passagens disponíveis para o trecho " + origem + " -> " + destino;
+    }
+
     private void regenerarToken() {
         synchronized (this) {
             // Encontra o próximo servidor ativo para segurar o token
