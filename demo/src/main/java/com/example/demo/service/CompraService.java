@@ -148,19 +148,6 @@ public class CompraService {
         }
     }
     
-
-    public String comprarTrechoIndividual(String origem, String destino) {
-        String chaveTrecho = origem + "-" + destino;
-        Trecho trechoLocal = trechos.get(chaveTrecho);
-    
-        // Verifica a disponibilidade local do trecho usando a chave de origem e destino
-        if (trechoLocal != null && trechoLocal.getPassagensDisponiveis() > 0) {
-            trechoLocal.setPassagensDisponiveis(trechoLocal.getPassagensDisponiveis() - 1);
-            return "Venda feita para o trecho: " + origem + " -> " + destino;
-        }
-        return "Falha: Sem passagens disponíveis para o trecho " + origem + " -> " + destino;
-    }
-    
     
     
     private String tentarComprarEmOutrosServidores(String origem, String destino) {
@@ -282,21 +269,6 @@ public class CompraService {
         }, tokenTimeout, tokenTimeout);  // Verifica e repassa a cada tokenTimeout
     }
 
-
-    private boolean verificarTrechoLocal(Trecho trecho) {
-        if (trecho != null && trecho.getPassagensDisponiveis() > 0) {
-            trecho.setPassagensDisponiveis(trecho.getPassagensDisponiveis() - 1);
-
-            // Atualiza os outros servidores
-            atualizarTrechosEmTodosOsServidores(trecho);
-
-            
-
-            return true;
-        }
-        return false;
-    }
-
     private void atualizarTrechosEmTodosOsServidores(Trecho trecho) {
         for (String servidor : servidores) {
             if (!servidor.contains(String.valueOf(idServidor))) {
@@ -312,48 +284,6 @@ public class CompraService {
         }
     }
 
-
-    public List<List<Trecho>> montarRota(String origem, String destino) {
-        ConcurrentHashMap<String, Trecho> todosOsTrechos = getAllTrechos();
-        Map<String, List<Trecho>> grafo = new HashMap<>();
-        System.out.println("olha todos os t rechos aqui="+ todosOsTrechos);
-
-        // Constrói o grafo de trechos a partir de todas as origens e destinos 
-        for (Trecho trecho : todosOsTrechos.values()) {
-            grafo.computeIfAbsent(trecho.getOrigem(), k -> new ArrayList<>()).add(trecho);
-        }
-
-        // BFS para encontrar todas as rotas 
-        Queue<List<Trecho>> fila = new LinkedList<>();
-        List<List<Trecho>> rotas = new ArrayList<>();
-
-        for (Trecho trecho : grafo.getOrDefault(origem, new ArrayList<>())) {
-            List<Trecho> caminhoInicial = new ArrayList<>();
-            caminhoInicial.add(trecho);
-            fila.add(caminhoInicial);
-        }
-
-        while (!fila.isEmpty()) {
-            List<Trecho> caminhoAtual = fila.poll();
-            Trecho ultimoTrecho = caminhoAtual.get(caminhoAtual.size() - 1);
-        
-            System.out.println("Verificando trecho atual: " + ultimoTrecho);
-        
-            if (ultimoTrecho.getDestino().equals(destino)) {
-                rotas.add(new ArrayList<>(caminhoAtual));
-                System.out.println("Rota encontrada: " + caminhoAtual);
-            } else {
-                for (Trecho proximoTrecho : grafo.getOrDefault(ultimoTrecho.getDestino(), new ArrayList<>())) {
-                    List<Trecho> novoCaminho = new ArrayList<>(caminhoAtual);
-                    novoCaminho.add(proximoTrecho);
-                    fila.add(novoCaminho);
-                }
-            }
-        }
-        System.out.println("cheguei aqui no final pra montar a rota.");
-        System.out.println("rotas montadas="+rotas);
-        return rotas;
-    }
 
     private void iniciarHeartbeats() {
         long intervaloHeartbeat = 5000; 
@@ -381,34 +311,55 @@ public class CompraService {
         }, 0, intervaloHeartbeat);
     }
     
-    private void atualizar_arquivos(List<Trecho> rotaEscolhida){
+    // Método que atualiza arquivos JSON para cada servidor com as rotas correspondentes
+    private void atualizar_arquivos(List<Trecho> rotaEscolhida) {
+        // Cria uma lista de IDs representando os servidores a serem processados
         List<String> ID_s = new LinkedList<>();
-        ID_s.add("1");
-        ID_s.add("2");
-        ID_s.add("3");
+        ID_s.add("1"); // Adiciona o ID do servidor 1
+        ID_s.add("2"); // Adiciona o ID do servidor 2
+        ID_s.add("3"); // Adiciona o ID do servidor 3
 
-        for(String id : ID_s){
+        // Itera sobre cada ID de servidor para organizar e salvar os trechos
+        for (String id : ID_s) {
+            // Variável que armazenará os trechos organizados para o servidor atual
             ConcurrentHashMap<String, Map<String, Map<String, Long>>> trechos_para_arquivo;
-            trechos_para_arquivo = organizardor_arquivo(id);                                  
-            salvar_no_arquivo("cidadesServer"+id+".json",trechos_para_arquivo);
-        }
 
+            // Organiza os trechos para o servidor atual com base em seu ID
+            trechos_para_arquivo = organizardor_arquivo(id);
+
+            // Salva o resultado no arquivo correspondente ao servidor atual
+            salvar_no_arquivo("cidadesServer" + id + ".json", trechos_para_arquivo);
+        }
     }
 
-    public ConcurrentHashMap<String, Map<String, Map<String, Long>>> organizardor_arquivo(String Id_servidor){
+    // Método que organiza os trechos pertencentes a um servidor específico
+    public ConcurrentHashMap<String, Map<String, Map<String, Long>>> organizardor_arquivo(String Id_servidor) {
+        // Mapa que armazenará os trechos organizados pelo servidor
         ConcurrentHashMap<String, Map<String, Map<String, Long>>> trechos_para_arquivo = new ConcurrentHashMap<>();
-        for(Trecho trecho : trechos.values()){
-            if(trecho.getServidor().equals(Id_servidor)){
+
+        // Itera sobre todos os trechos existentes
+        for (Trecho trecho : trechos.values()) {
+            // Verifica se o trecho pertence ao servidor especificado
+            if (trecho.getServidor().equals(Id_servidor)) {
+                // Adiciona a cidade de origem ao mapa, se ainda não existir
                 trechos_para_arquivo.putIfAbsent(trecho.getOrigem(), new HashMap<>());
+
+                // Cria um mapa para armazenar detalhes do trecho (servidor e passagens disponíveis)
                 Map<String, Long> detalhes = new HashMap<>();
                 detalhes.put(trecho.getServidor(), trecho.getPassagensDisponiveis());
+
+                // Adiciona o destino e seus detalhes ao mapa da origem correspondente
                 trechos_para_arquivo.get(trecho.getOrigem()).put(trecho.getDestino(), detalhes);
+
+                // Garante que o destino também exista no mapa, mesmo sem trechos disponíveis
                 trechos_para_arquivo.putIfAbsent(trecho.getDestino(), new HashMap<>());
             }
         }
-        return trechos_para_arquivo;
 
+        // Retorna o mapa com os trechos organizados para o servidor especificado
+        return trechos_para_arquivo;
     }
+
 
     public static void salvar_no_arquivo(String nomedoArquivo,ConcurrentHashMap<String, Map<String, Map<String, Long>>> trechos_para_arquivo_1){
         // Caminho e nome do arquivo JSON
@@ -437,9 +388,6 @@ public class CompraService {
         }
 
     }
-
-
-
 
     private void regenerarToken() {
         synchronized (this) {
