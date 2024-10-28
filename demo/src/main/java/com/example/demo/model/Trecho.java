@@ -12,6 +12,9 @@ public class Trecho {
         this.passagensDisponiveis = passagensDisponiveis;
         this.servidor = servidor;
     }
+    // Construtor padrão (necessário para desserialização)
+    public Trecho() {
+    }
 
     public String getServidor(){
         return servidor;

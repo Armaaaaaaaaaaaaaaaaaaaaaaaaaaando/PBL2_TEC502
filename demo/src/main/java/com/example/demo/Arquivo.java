@@ -53,8 +53,8 @@ public class Arquivo {
 
         serverId = "2";
         adicionador = new Arquivo();
-        adicionador.adicionarCidade("Salvador", "Recife", 15L, serverId);
-        adicionador.adicionarCidade("Fortaleza", "Belo Horizonte", 20L,serverId);
+        adicionador.adicionarCidade("Salvador", "Rio de Janeiro", 15L, serverId);
+        adicionador.adicionarCidade("Sao Paulo", "Salvador", 20L,serverId);
         salvar("cidadesServer2.json");
 
         serverId = "3";

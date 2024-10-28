@@ -32,9 +32,19 @@ public class ServidorController {
     }
 
     @PostMapping("/comprar")
-    public String comprarPassagem(@RequestParam String origem, @RequestParam String destino) {
-        return compraService.comprar(origem, destino);
+public String comprarPassagem(@RequestBody List<Trecho> rotaEscolhida) {
+    if (rotaEscolhida == null || rotaEscolhida.isEmpty()) {
+        return "Falha: A rota escolhida não pode ser vazia.";
     }
+
+    return compraService.comprar(rotaEscolhida);
+}
+
+    @PostMapping("/comprarTrecho")
+public String comprarTrecho(@RequestParam String origem, @RequestParam String destino) {
+    return compraService.comprarTrechoIndividual(origem, destino);
+}
+
 
     @GetMapping("/liberarPermissao")
     public void liberarPermissao(@RequestParam int servidorId) {
