@@ -47,42 +47,29 @@ public class DemoApplication {
             // Obtém o ID do servidor a partir do ambiente (env)
             String serverId = env.getProperty("server.id");
             AdicionarCidades adicionarCidades = context.getBean(AdicionarCidades.class);
-            
-
-            ConcurrentHashMap<String, Map<String, Map<String, Long>>>  cidades_servidor_1 = new ConcurrentHashMap<>();
-            ConcurrentHashMap<String, Map<String, Map<String, Long>>>  cidades_servidor_2 = new ConcurrentHashMap<>();
-            ConcurrentHashMap<String, Map<String, Map<String, Long>>>  cidades_servidor_3 = new ConcurrentHashMap<>();
-
-
+    
             // Caminho e nome do arquivo JSON
             String caminhoPasta = "dados";
-
-            if(serverId.equals("1")){
-                String nomeArquivo = "cidadesServer1.json";
-                File arquivoJSON = new File(caminhoPasta, nomeArquivo);
-                cidades_servidor_1 = ler_cidades(arquivoJSON);
-
-                //adicionando cidades do primeiro servidor
-                adicionar_cidades_no_servidor(cidades_servidor_1,adicionarCidades);
+            ConcurrentHashMap<String, Map<String, Map<String, Long>>> cidades = new ConcurrentHashMap<>();
+    
+            // Verifica o ID do servidor e carrega o JSON correspondente
+            String nomeArquivo = String.format("cidadesServer%s.json", serverId);
+            File arquivoJSON = new File(caminhoPasta, nomeArquivo);
+    
+            System.out.printf("Servidor %s ativado, carregando: %s%n", serverId, nomeArquivo);
+    
+            // Ler as cidades do JSON
+            cidades = ler_cidades(arquivoJSON);
+    
+            // Adiciona as cidades ao servidor
+            if (!cidades.isEmpty()) {
+                adicionar_cidades_no_servidor(cidades, adicionarCidades);
+            } else {
+                System.err.printf("Nenhuma cidade encontrada no arquivo %s%n", nomeArquivo);
             }
-            else if(serverId.equals("2")){
-                String nomeArquivo = "cidadesServer2.json";
-                File arquivoJSON = new File(caminhoPasta, nomeArquivo);
-                cidades_servidor_2 = ler_cidades(arquivoJSON);
-                //adicionando cidades no segundo servidor
-                adicionar_cidades_no_servidor(cidades_servidor_2,adicionarCidades);
-            }
-
-            else if(serverId.equals("3")){
-                String nomeArquivo = "cidadesServer3.json";
-                File arquivoJSON = new File(caminhoPasta, nomeArquivo);
-                cidades_servidor_3 = ler_cidades(arquivoJSON);
-                //adicionando cidades no terceiro servidor
-                adicionar_cidades_no_servidor(cidades_servidor_3,adicionarCidades);
-            }
-            
         };
     }
+    
 
 
     public static  ConcurrentHashMap<String, Map<String, Map<String, Long>>>  ler_cidades(File arquivoJSON) throws ParseException, IOException {
@@ -92,7 +79,6 @@ public class DemoApplication {
         try (FileReader leitor = new FileReader(arquivoJSON)) {
             JSONObject jsonObject = (JSONObject) parser.parse(leitor);
             trechos_do_arquivo = new ConcurrentHashMap<>();
-
             
             trechos_do_arquivo.putAll(jsonObject);
 
