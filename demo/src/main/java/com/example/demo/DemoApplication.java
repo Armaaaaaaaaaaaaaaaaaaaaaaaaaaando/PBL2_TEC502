@@ -53,30 +53,34 @@ public class DemoApplication {
             ConcurrentHashMap<String, Map<String, Map<String, Long>>>  cidades_servidor_2 = new ConcurrentHashMap<>();
             ConcurrentHashMap<String, Map<String, Map<String, Long>>>  cidades_servidor_3 = new ConcurrentHashMap<>();
 
+
             // Caminho e nome do arquivo JSON
             String caminhoPasta = "dados";
-            String nomeArquivo = "cidadesServer1.json";
-            File arquivoJSON = new File(caminhoPasta, nomeArquivo);
-            cidades_servidor_1 = ler_cidades(arquivoJSON);
 
-            //adicionando cidades do primeiro servidor
-            adicionar_cidades_no_servidor(cidades_servidor_1,adicionarCidades);
+            if(serverId.equals("1")){
+                String nomeArquivo = "cidadesServer1.json";
+                File arquivoJSON = new File(caminhoPasta, nomeArquivo);
+                cidades_servidor_1 = ler_cidades(arquivoJSON);
 
+                //adicionando cidades do primeiro servidor
+                adicionar_cidades_no_servidor(cidades_servidor_1,adicionarCidades);
+            }
+            else if(serverId.equals("2")){
+                String nomeArquivo = "cidadesServer2.json";
+                File arquivoJSON = new File(caminhoPasta, nomeArquivo);
+                cidades_servidor_2 = ler_cidades(arquivoJSON);
+                //adicionando cidades no segundo servidor
+                adicionar_cidades_no_servidor(cidades_servidor_2,adicionarCidades);
+            }
+
+            else if(serverId.equals("3")){
+                String nomeArquivo = "cidadesServer3.json";
+                File arquivoJSON = new File(caminhoPasta, nomeArquivo);
+                cidades_servidor_3 = ler_cidades(arquivoJSON);
+                //adicionando cidades no terceiro servidor
+                adicionar_cidades_no_servidor(cidades_servidor_3,adicionarCidades);
+            }
             
-            nomeArquivo = "cidadesServer2.json";
-            arquivoJSON = new File(caminhoPasta, nomeArquivo);
-            cidades_servidor_2 = ler_cidades(arquivoJSON);
-            //adicionando cidades no segundo servidor
-            adicionar_cidades_no_servidor(cidades_servidor_2,adicionarCidades);
-
-            
-            nomeArquivo = "cidadesServer3.json";
-            arquivoJSON = new File(caminhoPasta, nomeArquivo);
-            cidades_servidor_3 = ler_cidades(arquivoJSON);
-            //adicionando cidades no terceiro servidor
-            adicionar_cidades_no_servidor(cidades_servidor_3,adicionarCidades);
-
-
         };
     }
 
