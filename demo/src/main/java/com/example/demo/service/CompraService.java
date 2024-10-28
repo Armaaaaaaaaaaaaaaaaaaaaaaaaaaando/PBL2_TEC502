@@ -77,12 +77,9 @@ public class CompraService {
         return trechos;
     }
 
-    public String comprar(String origem, String destino) {
-        String conteudo = origem + "-" + destino;
-        System.out.println("antes de solicitar= " + conteudo);
-
-        solicitarToken();
-
+    public String comprar(List<Trecho> rotaEscolhida) {
+        solicitarToken(); // Solicita o token para garantir acesso à região crítica
+    
         synchronized (this) {
             long tempoInicio = System.currentTimeMillis();
             while (!tokenHolder.equals("http://localhost:" + idServidor)) {
@@ -98,29 +95,76 @@ public class CompraService {
                 }
             }
         }
-
-        System.out.println("depois de pegar o token= " + conteudo);
-        System.out.println("todos os trechos sao assim= " + trechos);
-
-        String resposta = null;
-
-        synchronized (this) {
-            System.out.println("Acesso à seção crítica");
-
-            ConcurrentHashMap<String, Trecho> todosOsTrechos = getAllTrechos();
-            Trecho trecho = todosOsTrechos.get(conteudo);
-            System.out.println("resultado do trecho=" + trecho);
-
-            if (verificarTrechoLocal(trecho)) {
-                resposta = "Venda feita: " + origem + " -> " + destino;
+    
+        boolean sucessoNaCompra = true; // Flag para verificar se todos os trechos têm passagens disponíveis
+    
+        for (Trecho trecho : rotaEscolhida) {
+            Trecho trechoLocal = trechos.get(trecho.getOrigem() + "-" + trecho.getDestino());
+    
+            if (trechoLocal == null || trechoLocal.getPassagensDisponiveis() < 1) {
+                // Tenta comprar o trecho em outros servidores se não houver disponibilidade local
+                String resposta = tentarComprarEmOutrosServidores(trecho.getOrigem(), trecho.getDestino());
+                if (resposta == null || !resposta.contains("Venda feita")) {
+                    sucessoNaCompra = false;
+                    break;
+                }
             } else {
-                resposta = tentarComprarEmOutrosServidores(origem, destino);
+                trechoLocal.setPassagensDisponiveis(trechoLocal.getPassagensDisponiveis() - 1); // Reserva localmente
             }
         }
-
-        liberarToken();
-        return resposta != null ? resposta : "Falha: trecho não encontrado";
+    
+        if (sucessoNaCompra) {
+            for (Trecho trecho : rotaEscolhida) {
+                atualizarTrechosEmTodosOsServidores(trecho);
+            }
+            liberarToken();
+            return "Compra realizada com sucesso para a rota: " + rotaEscolhida;
+        } else {
+            // Desfaz as reservas locais caso a compra falhe
+            for (Trecho trecho : rotaEscolhida) {
+                Trecho trechoLocal = trechos.get(trecho.getOrigem() + "-" + trecho.getDestino());
+                if (trechoLocal != null) {
+                    trechoLocal.setPassagensDisponiveis(trechoLocal.getPassagensDisponiveis() + 1);
+                }
+            }
+            liberarToken();
+            return "Falha: Um ou mais trechos não têm passagens disponíveis.";
+        }
     }
+    
+
+    public String comprarTrechoIndividual(String origem, String destino) {
+        String chaveTrecho = origem + "-" + destino;
+        Trecho trechoLocal = trechos.get(chaveTrecho);
+    
+        // Verifica a disponibilidade local do trecho usando a chave de origem e destino
+        if (trechoLocal != null && trechoLocal.getPassagensDisponiveis() > 0) {
+            trechoLocal.setPassagensDisponiveis(trechoLocal.getPassagensDisponiveis() - 1);
+            return "Venda feita para o trecho: " + origem + " -> " + destino;
+        }
+        return "Falha: Sem passagens disponíveis para o trecho " + origem + " -> " + destino;
+    }
+    
+    
+    
+    private String tentarComprarEmOutrosServidores(String origem, String destino) {
+        for (String servidor : servidores) {
+            // Evita tentar a compra no servidor atual
+            if (!servidor.contains(String.valueOf(idServidor))) {
+                String url = servidor + "/api/comprarTrecho?origem=" + origem + "&destino=" + destino;
+                try {
+                    String resposta = restTemplate.postForObject(url, null, String.class);
+                    if (resposta != null && resposta.contains("Venda feita")) {
+                        return resposta;
+                    }
+                } catch (Exception e) {
+                    System.err.println("Erro ao tentar comprar em outro servidor: " + servidor + " - " + e.getMessage());
+                }
+            }
+        }
+        return "Falha: Não foi possível comprar o trecho " + origem + " -> " + destino + " em outros servidores.";
+    }
+    
 
     public void solicitarToken() {
         int maxTentativas = 5; // Número de tentativas
@@ -240,32 +284,15 @@ public class CompraService {
             if (!servidor.contains(String.valueOf(idServidor))) {
                 String url = servidor + "/api/atualizarTrecho";
                 try {
-                    restTemplate.postForObject(url, trecho, String.class);
-                    System.out.println("Trecho atualizado no servidor: " + servidor);
+                    System.out.println("Atualizando trecho no servidor: " + servidor + " com trecho: " + trecho);
+                    String response = restTemplate.postForObject(url, trecho, String.class);
+                    System.out.println("Resposta do servidor " + servidor + ": " + response);
                 } catch (Exception e) {
                     System.err.println("Erro ao atualizar trecho no servidor: " + servidor + " - " + e.getMessage());
                 }
             }
         }
     }
-
-    private String tentarComprarEmOutrosServidores(String origem, String destino) {
-        for (String servidor : servidores) {
-            if (!servidor.contains(String.valueOf(idServidor))) {
-                String url = servidor + "/api/comprar?origem=" + origem + "&destino=" + destino;
-                try {
-                    String resposta = restTemplate.postForObject(url, null, String.class);
-                    if (resposta != null && resposta.contains("Venda feita")) {
-                        return resposta;
-                    }
-                } catch (Exception e) {
-                    System.err.println("Erro ao tentar comprar em outro servidor: " + servidor + " - " + e.getMessage());
-                }
-            }
-        }
-        return null;
-    }
-
 
 
     public List<List<Trecho>> montarRota(String origem, String destino) {
@@ -311,7 +338,7 @@ public class CompraService {
     }
 
     private void iniciarHeartbeats() {
-        long intervaloHeartbeat = 5000; // Enviar heartbeat a cada 5 segundos
+        long intervaloHeartbeat = 5000; 
     
         heartbeatTimer.scheduleAtFixedRate(new TimerTask() {
             @Override
@@ -323,9 +350,8 @@ public class CompraService {
                             estadoServidores.put(servidor, true);  // Servidor está ativo
                         } catch (Exception e) {
                             System.err.println("Falha no heartbeat com o servidor: " + servidor);
-                            estadoServidores.put(servidor, false);  // Marca servidor como inativo
+                            estadoServidores.put(servidor, false);  
     
-                            // Se o servidor que detém o token está inativo, precisamos regenerar o token
                             if (tokenHolder.equals(servidor)) {
                                 System.out.println("Servidor com o token caiu: " + servidor);
                                 regenerarToken();  // Chama o método para regenerar o token
