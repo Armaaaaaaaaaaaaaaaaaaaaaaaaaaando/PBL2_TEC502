@@ -56,6 +56,11 @@ public String comprarPassagem(@RequestBody List<Trecho> rotaEscolhida) {
         compraService.receberToken(); // Recebe o token
     }
 
+    @PostMapping("/comprarTrecho")
+    public String comprarTrecho(@RequestParam String origem, @RequestParam String destino) {
+        return compraService.comprarTrechoIndividual(origem, destino);
+    }
+
     @PostMapping("/atualizarTrecho")
     public ResponseEntity<String> atualizarTrecho(@RequestBody Trecho trecho) {
         compraService.getAll().put(trecho.getOrigem() + "-" + trecho.getDestino(), trecho);
