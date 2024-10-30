@@ -271,25 +271,6 @@ public class CompraService {
         }, tokenTimeout, tokenTimeout);  // Verifica e repassa a cada tokenTimeout
     }
 
-    /*
-
-    private void atualizarTrechosEmTodosOsServidores(Trecho trecho) {
-        for (String servidor : servidores) {
-            if (!servidor.contains(String.valueOf(idServidor))) {
-                String url = servidor + "/api/atualizarTrecho";
-                try {
-                    System.out.println("Atualizando trecho no servidor: " + servidor + " com trecho: " + trecho);
-                    String response = restTemplate.postForObject(url, trecho, String.class);
-                    System.out.println("Resposta do servidor " + servidor + ": " + response);
-                } catch (Exception e) {
-                    System.err.println("Erro ao atualizar trecho no servidor: " + servidor + " - " + e.getMessage());
-                }
-            }
-        }
-    }
-         */
-
-
     private void iniciarHeartbeats() {
         long intervaloHeartbeat = 5000; 
     
