@@ -56,8 +56,6 @@ public class CompraService {
         for (String servidor : servidores) {
             adicionarTrechosDeOutroServidor(todosOsTrechos, servidor + "/api/trecho");
         }
-
-        System.out.println("Todos os trechos: " + todosOsTrechos);
         return todosOsTrechos;
     }
 
@@ -109,6 +107,7 @@ public class CompraService {
             if (trechoLocal == null || trechoLocal.getPassagensDisponiveis() < 1) {
                 // Tenta comprar o trecho em outros servidores se não houver disponibilidade local
                 String resposta = tentarComprarEmOutrosServidores(trecho.getOrigem(), trecho.getDestino());
+                System.out.println("Resposta ao tentar comprar em outro servidor: "+resposta);
                 if (resposta == null || !resposta.contains("Venda feita")) {
                     sucessoNaCompra = false;
                     break;
@@ -121,15 +120,18 @@ public class CompraService {
         }
     
         if (sucessoNaCompra) {
+            System.out.println("Antes da atualização: "+getAllTrechos());
+
             for (Trecho trecho : rotaEscolhida) {
-                atualizarTrechosEmTodosOsServidores(trecho);
-                if(trechos.containsKey(trecho.getOrigem()+"-"+trecho.getDestino())){
-                    Long pssg_de_atualização = trechos.get(trecho.getOrigem()+"-"+trecho.getDestino()).getPassagensDisponiveis(); 
+                //atualizarTrechosEmTodosOsServidores(trecho);
+                if(getAllTrechos().containsKey(trecho.getOrigem()+"-"+trecho.getDestino())){
+                    Long pssg_de_atualização = getAllTrechos().get(trecho.getOrigem()+"-"+trecho.getDestino()).getPassagensDisponiveis(); 
                     trecho.setPassagensDisponiveis(pssg_de_atualização);
                 }
+
             }
 
-            System.out.println(rotaEscolhida);
+            System.out.println("Depois da atualização: "+getAllTrechos());
             //aqui atualiza os trechos
             atualizar_arquivos(rotaEscolhida);
 
@@ -269,6 +271,8 @@ public class CompraService {
         }, tokenTimeout, tokenTimeout);  // Verifica e repassa a cada tokenTimeout
     }
 
+    /*
+
     private void atualizarTrechosEmTodosOsServidores(Trecho trecho) {
         for (String servidor : servidores) {
             if (!servidor.contains(String.valueOf(idServidor))) {
@@ -283,6 +287,7 @@ public class CompraService {
             }
         }
     }
+         */
 
 
     private void iniciarHeartbeats() {
@@ -336,9 +341,13 @@ public class CompraService {
     public ConcurrentHashMap<String, Map<String, Map<String, Long>>> organizardor_arquivo(String Id_servidor) {
         // Mapa que armazenará os trechos organizados pelo servidor
         ConcurrentHashMap<String, Map<String, Map<String, Long>>> trechos_para_arquivo = new ConcurrentHashMap<>();
+        
 
-        // Itera sobre todos os trechos existentes
-        for (Trecho trecho : trechos.values()) {
+        ConcurrentHashMap<String, Trecho> todosOsTrechos = new ConcurrentHashMap<>();
+
+        todosOsTrechos = getAllTrechos();
+
+        for (Trecho trecho : todosOsTrechos.values()) {
             // Verifica se o trecho pertence ao servidor especificado
             if (trecho.getServidor().equals(Id_servidor)) {
                 // Adiciona a cidade de origem ao mapa, se ainda não existir
@@ -396,7 +405,7 @@ public class CompraService {
         // Verifica a disponibilidade local do trecho usando a chave de origem e destino
         if (trechoLocal != null && trechoLocal.getPassagensDisponiveis() > 0) {
             trechoLocal.setPassagensDisponiveis(trechoLocal.getPassagensDisponiveis() - 1);
-            return "Venda feita para o trecho: " + origem + " -> " + destino;
+            return "Venda feita para o trecho: " + origem + " -> " + destino + "Passagens: "+trechoLocal.getPassagensDisponiveis();
         }
         return "Falha: Sem passagens disponíveis para o trecho " + origem + " -> " + destino;
     }
