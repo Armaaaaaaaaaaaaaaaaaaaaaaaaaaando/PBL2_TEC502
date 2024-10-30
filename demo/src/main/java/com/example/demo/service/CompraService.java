@@ -418,5 +418,44 @@ public class CompraService {
             }
         }
     }
+
+    public List<List<Trecho>> montarRota(String origem, String destino) {
+        ConcurrentHashMap<String, Trecho> todosOsTrechos = getAllTrechos();
+        Map<String, List<Trecho>> grafo = new HashMap<>();
+        System.out.println("olha todos os t rechos aqui="+ todosOsTrechos);
+        // Constrói o grafo de trechos a partir de todas as origens e destinos 
+        for (Trecho trecho : todosOsTrechos.values()) {
+            grafo.computeIfAbsent(trecho.getOrigem(), k -> new ArrayList<>()).add(trecho);
+        }
+        // BFS para encontrar todas as rotas 
+        Queue<List<Trecho>> fila = new LinkedList<>();
+        List<List<Trecho>> rotas = new ArrayList<>();
+        for (Trecho trecho : grafo.getOrDefault(origem, new ArrayList<>())) {
+            List<Trecho> caminhoInicial = new ArrayList<>();
+            caminhoInicial.add(trecho);
+            fila.add(caminhoInicial);
+        }
+        while (!fila.isEmpty()) {
+            List<Trecho> caminhoAtual = fila.poll();
+            Trecho ultimoTrecho = caminhoAtual.get(caminhoAtual.size() - 1);
+        
+            System.out.println("Verificando trecho atual: " + ultimoTrecho);
+        
+            if (ultimoTrecho.getDestino().equals(destino)) {
+                rotas.add(new ArrayList<>(caminhoAtual));
+                System.out.println("Rota encontrada: " + caminhoAtual);
+            } else {
+                for (Trecho proximoTrecho : grafo.getOrDefault(ultimoTrecho.getDestino(), new ArrayList<>())) {
+                    List<Trecho> novoCaminho = new ArrayList<>(caminhoAtual);
+                    novoCaminho.add(proximoTrecho);
+                    fila.add(novoCaminho);
+                }
+            }
+        }
+        System.out.println("cheguei aqui no final pra montar a rota.");
+        System.out.println("rotas montadas="+rotas);
+        return rotas;
+    }
+
     
 }
