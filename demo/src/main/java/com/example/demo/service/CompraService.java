@@ -307,14 +307,40 @@ public class CompraService {
 
         // Itera sobre cada ID de servidor para organizar e salvar os trechos
         for (String id : ID_s) {
-            // Variável que armazenará os trechos organizados para o servidor atual
-            ConcurrentHashMap<String, Map<String, Map<String, Long>>> trechos_para_arquivo;
 
-            // Organiza os trechos para o servidor atual com base em seu ID
-            trechos_para_arquivo = organizardor_arquivo(id);
 
-            // Salva o resultado no arquivo correspondente ao servidor atual
-            salvar_no_arquivo("cidadesServer" + id + ".json", trechos_para_arquivo);
+            String idString = String.valueOf(idServidor);
+            char ultimoCaractere = idString.charAt(idString.length() - 1);
+            char caractere = id.charAt(0); 
+
+
+            if(caractere == ultimoCaractere){
+                // Variável que armazenará os trechos organizados para o servidor atual
+                ConcurrentHashMap<String, Map<String, Map<String, Long>>> trechos_para_arquivo;
+
+                // Organiza os trechos para o servidor atual com base em seu ID
+                trechos_para_arquivo = organizardor_arquivo(id);
+
+                // Salva o resultado no arquivo correspondente ao servidor atual
+                salvar_no_arquivo("cidadesServer" + id + ".json", trechos_para_arquivo);
+            }
+            else{
+                System.out.println("Estado dos servidores: "+estadoServidores);
+                String link_provisorio = "http://localhost:808"+id;
+                
+                if (estadoServidores.get(link_provisorio)){
+                    // Variável que armazenará os trechos organizados para o servidor atual
+                    ConcurrentHashMap<String, Map<String, Map<String, Long>>> trechos_para_arquivo;
+
+                    // Organiza os trechos para o servidor atual com base em seu ID
+                    trechos_para_arquivo = organizardor_arquivo(id);
+
+                    // Salva o resultado no arquivo correspondente ao servidor atual
+                    salvar_no_arquivo("cidadesServer" + id + ".json", trechos_para_arquivo);
+                } 
+            }
+            
+            
         }
     }
 
