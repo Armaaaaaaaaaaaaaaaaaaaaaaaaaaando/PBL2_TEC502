@@ -140,6 +140,17 @@ Para adicionar a implementação do algoritmo do token ring, foi fundamental o p
 - Recebimento do Token: O próximo servidor na lista recebe o token, que é indicado por uma chamada ao método receberToken.
 - Heartbeat e Monitoramento: Os servidores enviam e monitoram heartbeats periodicamente para verificar se todos os servidores estão ativos. Se o servidor titular do token falha, o token é regenerado e atribuído ao próximo servidor ativo.
 
+Para exemplificar a utilização do token ring será demonstrado a interação dos três servidores distintos, A, B e C, cada um responsável por um trecho de voo. O objetivo é ilustrar como esses servidores colaboram para processar uma compra de passagem, gerenciando a comunicação entre eles através de um protocolo de rede específico. Durante o processo, o Servidor A atuará com a conexão do cliente que solicita informações e efetua a compra, enquanto os Servidores 2 e 3 responderão com detalhes sobre a disponibilidade dos trechos solicitados. 
+Na imagem abaixo é possível visualizar esse processo. Com o objetivo de destacar a importância da coordenação e da integridade das transações em um ambiente distribuído. Demonstrando também como o sistema gerencia conflitos e garante que as operações sejam realizadas de forma eficiente e segura. Considerando o algoritmo implementado, o processo de compra só se dá no momento em que o servidor detém o token, visto que será o momento de acesso a região crítica.
+
+<p align="center"><strong></strong></p>
+<p align="center">
+  <img src="Imagens/processo de compra.png" width = "400" />
+</p>
+<p align="center"><strong>
+</strong> Figura 2. Diagrama de sequência do processo de compra.</p>
+
+
 O token ring foi escolhido em detrimento de outras opções de coordenação, como o relógio de Lamport ou o algoritmo de(Ricart e Grawalla), por apresentar vantagens específicas para este cenário de concorrência distribuída. A principal característica do token ring é o uso de um token exclusivo que circula entre os servidores, permitindo o acesso à região crítica somente ao servidor que detém o token no momento. Essa abordagem é particularmente vantajosa para um sistema em que o número de servidores é limitado e as operações críticas são frequentes e exigem sincronização estrita.
 
 O token ring oferece uma forma de controle direto sobre o acesso à região crítica, eliminando a necessidade de monitoramento constante de eventos distribuídos. Em comparação, o relógio de Lamport usa timestamps lógicos para manter a ordem de eventos em sistemas distribuídos, o que pode ser mais complexo e aumentar a sobrecarga em cenários de alta concorrência.
