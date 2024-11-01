@@ -1,1 +1,64 @@
+### Caso 1: Cliente em Servidor A pede para montar uma rota entre São Paulo e Rio de Janeiro
 POST http://localhost:8081/api/montarRota?origem=Sao Paulo&destino=Rio de Janeiro
+Content-Type: application/json
+
+###
+
+### Caso 2: Cliente em Servidor B pede para montar uma rota entre Campinas e Belo Horizonte
+POST http://localhost:8082/api/montarRota?origem=Campinas&destino=Belo Horizonte
+Content-Type: application/json
+
+###
+
+### Caso 3: Cliente em Servidor C pede para montar uma rota entre Brasília e Salvador
+POST http://localhost:8083/api/montarRota?origem=Brasilia&destino=Salvador
+Content-Type: application/json
+
+###
+
+### Caso 4: Cliente em Servidor A realiza a compra de uma rota completa: São Paulo -> Campinas -> Rio de Janeiro
+POST http://localhost:8081/api/comprar
+Content-Type: application/json
+
+[
+  {"origem": "Sao Paulo", "destino": "Brasilia"},
+  {"origem": "Brasilia", "destino": "Rio de Janeiro"}
+]
+
+###
+
+### Caso 5: Cliente em Servidor B realiza a compra de um trecho individual: Campinas -> Belo Horizonte
+POST http://localhost:8082/api/comprarTrecho?origem=Campinas&destino=Belo Horizonte
+Content-Type: application/json
+
+###
+
+### Caso 6: Cliente em Servidor C tenta comprar uma rota com múltiplos trechos: Brasília -> Goiânia -> Salvador
+POST http://localhost:8083/api/comprar
+Content-Type: application/json
+
+[
+  {"origem": "Sao Paulo", "destino": "Brasilia"},
+  {"origem": "Brasilia", "destino": "Rio de Janeiro"}
+]
+
+###
+
+### Caso 7: Cliente em Servidor A realiza a compra de um trecho inexistente: Manaus -> Fortaleza
+POST http://localhost:8081/api/comprarTrecho?origem=Manaus&destino=Fortaleza
+Content-Type: application/json
+
+
+###
+
+### Caso 8: Cliente em Servidor C verifica o heartbeat para confirmar se o servidor está ativo
+GET http://localhost:8083/api/heartbeat
+
+###
+
+### Caso 9: Cliente em Servidor A solicita o desligamento do servidor para testar o shutdown
+GET http://localhost:8081/api/shutdown
+
+
+
+
