@@ -175,6 +175,43 @@ Além disso, foi realizado um teste em que um servidor está inicialmente conect
 Com isso, na visão do usuário, caso um dos servidores que contém trecho de sua rota caia, a compra daquele trecho não é contabilizada, apenas dos servidores ativos. 
 
 
+## Testes realizados
+
+Foi feito um script em Java que simula a compra de passagens em um sistema distribuído, onde três servidores independentes processam pedidos de trechos. O cliente, representado pelo programa, envia requisições simultâneas para esses servidores, solicitando a compra e, em seguida, consulta a disponibilidade dos trechos. Com isso, o script serve como teste do funcionamento dos servidores em um ambiente de compra e venda, permitindo observar seu comportamento ao processar múltiplas requisições ao mesmo tempo.
+
+Primeiro, algumas URLs são definidas para representar as APIs dos três servidores, cada um com uma rota para processar compras (/api/comprar) e outra para verificar trechos disponíveis (/api/trechos). Em seguida, um cliente HTTP (HttpClient) e um serviço de execução (ExecutorService) com três threads são criados para enviar as requisições de compra simultaneamente.
+Um JSON (jsonPayload) especifica o trecho de passagem desejado — por exemplo, uma viagem de "São Paulo" para "Rio de Janeiro" — e é enviado nas requisições de compra. O programa usa o ExecutorService para enviar as requisições POST de compra aos três servidores. Cada requisição usa a função sendPostRequest, que envia o JSON e exibe a resposta, indicando se a compra foi bem-sucedida ou se ocorreu um erro.
+Após as requisições, o executor.shutdown() garante que todas as tarefas terminem antes de seguir para a consulta de disponibilidade dos trechos. Finalmente, as requisições GET são enviadas para verificar quantos trechos ainda estão disponíveis após as compras, usando sendGetRequest para exibir as respostas dos servidores.
+
+Esse script é útil para avaliar como um sistema de passagens se comporta sob múltiplas requisições simultâneas e verificar a disponibilidade de trechos após cada compra.
+
+
+Além disso, foi criado um script no estilo HTTP que realiza requisições específicas aos servidores. Esse script inclui nove casos que têm como objetivo testar a funcionalidade dos servidores em diversos cenários práticos. Abaixo, uma explicação sobre cada cenário testado:
+
+Caso 1: Um cliente no Servidor A solicita a montagem de uma rota entre São Paulo e Rio de Janeiro. Essa requisição tenta preparar a rota para futuras compras.
+
+Caso 2: No Servidor B, o cliente pede para montar uma rota entre Campinas e Belo Horizonte, preparando outro trecho para compras futuras.
+
+Caso 3: No Servidor C, o cliente solicita a montagem de uma rota entre Brasília e Salvador, configurando uma nova opção de trecho no servidor.
+
+Caso 4: Um cliente no Servidor A realiza a compra de uma rota completa, conectando São Paulo, Campinas e Rio de Janeiro. A requisição específica uma série de trechos para serem comprados como uma rota integrada.
+
+Caso 5: No Servidor B, o cliente realiza a compra de um único trecho entre Campinas e Belo Horizonte, útil quando o cliente deseja apenas uma parte da rota.
+
+Caso 6: Um cliente no Servidor C tenta comprar uma rota com múltiplos trechos, indo de Brasília para Goiânia e depois para Salvador. Esse cenário testa a compra de uma rota completa com múltiplas paradas.
+
+Caso 7: No Servidor A, o cliente tenta comprar um trecho inexistente entre Manaus e Fortaleza. Esse caso verifica se o sistema lida corretamente com tentativas de compra para rotas que não foram previamente cadastradas.
+
+Caso 8: No Servidor C, o cliente verifica o heartbeat do servidor, confirmando que o servidor está ativo e funcional. Essa operação retorna uma confirmação do status de disponibilidade do servidor.
+
+Caso 9: No Servidor A, o cliente realiza uma requisição para desligar o servidor, testando o processo de shutdown. Este é um cenário de gerenciamento que verifica se o sistema responde adequadamente ao comando de desligamento.
+
+Esses casos de teste são úteis para avaliar o comportamento e a resiliência dos servidores em situações de compra, montagem de rotas, verificações de status e gerenciamento do servidor, garantindo a funcionalidade do sistema em situações comuns e críticas.
+
+
+
+
+
 ## Docker adicionado ao sistema
 
 Neste projeto, o uso do Docker tem como objetivo assegurar um ambiente de execução consistente e isolado, simplificando a configuração. O Docker permite que tanto o servidor quanto os clientes rodem em containers independentes, eliminando problemas de compatibilidade entre diferentes sistemas operacionais e dependências. 
