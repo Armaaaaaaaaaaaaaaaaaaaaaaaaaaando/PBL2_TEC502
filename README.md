@@ -8,8 +8,10 @@ A solução será implementada com a API REST desenvolvida para permitir a inter
 ## Arquitetura da solução
 
 A arquitetura da solução foi dividida em três servidores, três APIs, arquivos e clientes. Cada servidor possui sua própria quantidade específica de trechos, que são obtidos a partir de um arquivo exclusivo de cada servidor. Ou seja, cada um dos três servidores possui um arquivo com as informações de cidade de origem, cidade de destino, quantidade de passagens e o ID do servidor.
+
 Cada servidor possui uma API baseada em HTTP com arquitetura RESTful. Isso significa que as APIs seguem os princípios REST (Representational State Transfer), um modelo arquitetural que define boas práticas para comunicação entre sistemas de forma simples e padronizada. As APIs RESTful utilizam métodos HTTP, como GET para buscar informações e POST para enviar dados, e adotam uma estrutura em que os recursos são representados em URLs claras e legíveis.
 Assim, quando o cliente deseja solicitar algo, como os trechos de um servidor, ele não se comunica diretamente com o servidor, mas sim por meio de sua API. O mesmo ocorre quando um servidor precisa solicitar os trechos de outros servidores: as informações são obtidas por meio de uma requisição à API, e o servidor que recebe a requisição responde conforme necessário.
+
 Além disso, há um cliente, que realiza a solicitação das compras. Ele pode comprar todos os trechos de um único servidor ou de diferentes servidores, montando sua rota com trechos de servidores distintos.
 Por fim, toda essa aplicação foi desenvolvida com o uso do Spring Boot, uma estrutura que facilita o desenvolvimento de aplicações em Java ao oferecer um conjunto de ferramentas e configurações automáticas, agilizando a criação de aplicações web, APIs RESTful e microserviços.
 Dessa forma, a arquitetura pode ser classificada como Cliente-Servidor Distribuída, permitindo que cada servidor opere de maneira independente e mantenha seu próprio conjunto de trechos, garantindo escalabilidade e facilidade de comunicação entre os servidores.
@@ -95,6 +97,7 @@ Possui um objeto do tipo Trecho como parâmetro e retorna um ResponseEntity com 
  ## Roteamento
  O cálculo distribuído das rotas entre a origem e o destino das passagens é realizado pelo método montarRota(String origem, String destino). Este método coleta todos os trechos disponíveis em um ConcurrentHashMap e constroi um grafo, onde cada cidade de origem é mapeada para uma lista de trechos correspondentes.
 Utilizando uma busca em largura (BFS), o método explora todos os caminhos possíveis a partir da cidade de origem. Para cada trecho, ele verifica se o destino corresponde ao desejado. Se sim, essa rota é armazenada; caso contrário, o algoritmo continua a busca explorando os trechos que partem do destino atual.
+
 Ao final, o método retorna uma lista de listas de trechos (List<List<Trecho>>), representando todas as rotas possíveis entre a origem e o destino. Assim, o sistema permite que os usuários visualizem todas as opções de viagem disponíveis, aproveitando a comunicação eficiente entre os servidores.
 Além disso, para apresentar as rotas com base nos trechos disponíveis em outros servidores, é feita uma chamada a um método que concatena todos os trechos de todos os servidores em uma estrutura, permitindo mostrar, de forma momentânea, o resultado das rotas.
 
@@ -116,7 +119,7 @@ A descrição visual da lógica do algoritmo pode ser visualizada na figura abai
 
 <p align="center"><strong></strong></p>
 <p align="center">
-  <img width = "400" />
+  <img src="Imagens/token ring.png" width = "400" />
 </p>
 <p align="center"><strong>
 </strong> Figura 1. Representação visual Token Ring.</p>
@@ -147,7 +150,7 @@ Na tabela abaixo, é possível observer o comparativo de alguns elementos princi
 
 <p align="center"><strong></strong></p>
 <p align="center">
-  <img width = "400" />
+  <img src="Imagens/tabela.png" width = "400" />
 </p>
 <p align="center"><strong>
 </strong> Tabela 1. Comparativo na implementação de algoritmos.</p>
