@@ -106,7 +106,7 @@ Além disso, para apresentar as rotas com base nos trechos disponíveis em outro
 Para resolver a distribuição de tarefas entre os servidores, foi utilizado um algoritmo conhecido como token ring, com algumas adaptações para atender às necessidades do sistema. O token ring é uma estrutura de comunicação onde apenas o servidor que possui o "token" pode acessar a região crítica, ou seja, a área do sistema onde as modificações de dados ocorrem.
 
 - A lógica principal do algoritmo pode ser descrita da seguinte maneira:
-  - l Um anel lógico é definido no sistema.
+  - Um anel lógico é definido no sistema.
   - Cada processo é associado a uma posição do anel.
   - Cada processo conhece seu sucessor .
   - Há uma marca (token) que fica circulando pelo anel e é essa marca que dá direito a um processo acessar a região crítica.
@@ -214,3 +214,13 @@ A implementação do sistema de reservas aéreas foi realizada com eficácia, po
 ## Tutor
 
 - Antonio A T R Coutinho
+
+## Referências
+
+TANENBAUM, A. S.; VAN STEEN, M. Distributed Systems: Principles and Paradigms. Pearson, 2016.
+
+COULOURIS, G.; DOLLIMORE, J.; KINDBERG, T.; BLAIR, G. Distributed Systems: Concepts and Design. Addison-Wesley, 2011.
+
+CARACTERÍSTICAS do Token Ring: guia completo. Disponível em: [token-ring](https://www.facom.ufms.br/~ricardo/Courses/DisSys/Material/SD-Aula-09.PDF). Acesso em: 1 nov. 2024.
+
+LDF GRUPO. Token Ring: características. Disponível em: https://ldfgrupo.pt/blog/token-ring-caracteristicas/ Acesso em: 1 nov. 2024.
