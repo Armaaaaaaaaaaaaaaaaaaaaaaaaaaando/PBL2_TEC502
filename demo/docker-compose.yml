@@ -1,0 +1,66 @@
+version: '3.8'
+services:
+  servidor1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - APP_MODE=server
+      - SERVER_ID=1
+      - SERVER_PORT=8081
+    ports:
+      - "8081:8081"
+
+  servidor2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - APP_MODE=server
+      - SERVER_ID=2
+      - SERVER_PORT=8082
+    ports:
+      - "8082:8082"
+
+  servidor3:
+    build:
+      context: . 
+      dockerfile: Dockerfile
+    environment:
+      - APP_MODE=server
+      - SERVER_ID=3
+      - SERVER_PORT=8083
+    ports:
+      - "8083:8083"
+
+  cliente1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - APP_MODE=client
+      - SERVER_URL=http://servidor1:8081
+      - SERVER_ID=1
+      - SERVER_PORT=8081
+    depends_on:
+      - servidor1
+
+  cliente2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - APP_MODE=client
+      - SERVER_URL=http://servidor2:8082
+    depends_on:
+      - servidor2
+
+  cliente3:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - APP_MODE=client
+      - SERVER_URL=http://servidor3:8083
+    depends_on:
+      - servidor3
