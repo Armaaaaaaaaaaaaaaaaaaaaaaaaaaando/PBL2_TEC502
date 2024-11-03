@@ -232,11 +232,9 @@ Ao executar este comando substitua (número do servidor) pelo valor que desejar,
 
 **Adicionar clientes:**
 
-3. **Criar um único cliente por vez:**
-Ao executar este comando substitua (número do cliente) pelo valor que desejar, 1, 2 ou 3.
-    ```bash
-    docker-compose up cliente(número do cliente)
-    ```
+3. **Executando clientes**
+Para testar pode-se utilizar o arquivo [requisições para testes](demo/src/main/java/com/example/demo/cliente/request.http), ou ainda executar o código do [cliente](demo/src/main/java/com/example/demo/cliente/Cliente.java)
+
 
 
 ## Conclusão
