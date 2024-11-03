@@ -64,7 +64,7 @@ public class Arquivo {
         salvar("cidadesServer3.json");
         
          // Caminho e nome do arquivo JSON
-         String caminhoPasta = "dados";
+         String caminhoPasta = "demo/dados";
          String nomeArquivo = "cidadesServer1.json";
          File arquivoJSON = new File(caminhoPasta, nomeArquivo);
          ler_cidades(arquivoJSON);
@@ -76,7 +76,7 @@ public class Arquivo {
 
     public static void salvar(String nomedoArquivo){
         // Caminho e nome do arquivo JSON
-        String caminhoPasta = "dados";
+        String caminhoPasta = "demo/dados";
         File arquivoJSON = new File(caminhoPasta, nomedoArquivo);
 
         File pasta = new File(caminhoPasta);

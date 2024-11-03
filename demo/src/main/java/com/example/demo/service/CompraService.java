@@ -39,7 +39,7 @@ public class CompraService {
     public CompraService(RestTemplate restTemplate, ObjectMapper objectMapper, Environment env) {
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
-        this.servidores = Arrays.asList("http://localhost:8081", "http://localhost:8082", "http://localhost:8083");
+        this.servidores = Arrays.asList("http://servidor1:8081", "http://servidor2:8082", "http://servidor3:8083");
         this.idServidor = Integer.parseInt(env.getProperty("server.port"));
         this.tokenHolder = servidores.get(0);
         // Inicializa a tarefa de repasse contínuo do token
@@ -85,7 +85,7 @@ public class CompraService {
     
         synchronized (this) {
             long tempoInicio = System.currentTimeMillis();
-            while (!tokenHolder.equals("http://localhost:" + idServidor)) {
+            while (!tokenHolder.equals("http://servidor" + (idServidor - 8080) + ":" + idServidor)) {
                 try {
                     wait(5000); // Timeout de 5 segundos
                     if (System.currentTimeMillis() - tempoInicio > tokenTimeout) {
@@ -179,7 +179,7 @@ public class CompraService {
         for (int i = 0; i < maxTentativas; i++) {
             synchronized (this) {
                 // Se o token já está com este servidor, retorna
-                if (tokenHolder.equals("http://localhost:" + idServidor)) {
+                if (tokenHolder.equals("http://servidor" + (idServidor - 8080) + ":" + idServidor)) {
                     System.out.println("Token já está com o servidor " + idServidor);
                     return; // Já possui o token
                 }
@@ -195,7 +195,7 @@ public class CompraService {
                 }
     
                 // Após o wait, verifica se o token foi recebido
-                if (tokenHolder.equals("http://localhost:" + idServidor)) {
+                if (tokenHolder.equals("http://servidor" + (idServidor - 8080) + ":" + idServidor)) {
                     System.out.println("Token obtido com sucesso pelo servidor " + idServidor);
                     return; // Token recebido
                 }
@@ -237,7 +237,7 @@ public class CompraService {
     }
 
     private String getProximoServidor() {
-        int indiceAtual = servidores.indexOf("http://localhost:" + idServidor);
+        int indiceAtual = servidores.indexOf("http://servidor" + (idServidor - 8080) + ":" + idServidor);
         int proximoIndice = (indiceAtual + 1) % servidores.size();
         String proximoServidor = servidores.get(proximoIndice);
     
@@ -252,7 +252,7 @@ public class CompraService {
     
 
     public synchronized void receberToken() {
-        tokenHolder = "http://localhost:" + idServidor;
+        tokenHolder = "http://servidor" + (idServidor - 8080) + ":" + idServidor;
         notifyAll(); // Notifica todos os clientes que estão esperando o token
         ultimaAtualizacaoToken = System.currentTimeMillis();
         System.out.println("Token recebido pelo servidor " + idServidor);
@@ -326,7 +326,7 @@ public class CompraService {
             }
             else{
                 System.out.println("Estado dos servidores: "+estadoServidores);
-                String link_provisorio = "http://localhost:808"+id;
+                String link_provisorio = "http://servidor" + (id) + ":808"+id;
                 
                 if (estadoServidores.get(link_provisorio)){
                     // Variável que armazenará os trechos organizados para o servidor atual
@@ -426,7 +426,7 @@ public class CompraService {
                     ultimaAtualizacaoToken = System.currentTimeMillis();
                     
                     // Se este servidor for o escolhido para segurar o token
-                    if (servidor.equals("http://localhost:" + idServidor)) {
+                    if (servidor.equals("http://servidor" + (idServidor - 8080) + ":" + idServidor)) {
                         System.out.println("Este servidor " + idServidor + " regenerou o token.");
                         notifyAll();  // Notifica os threads esperando pelo token
                     } else {
