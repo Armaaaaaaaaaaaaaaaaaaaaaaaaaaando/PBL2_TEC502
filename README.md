@@ -233,13 +233,11 @@ Ao executar este comando substitua (número do servidor) pelo valor que desejar,
 **Adicionar clientes:**
 
 3. **Executando clientes**
-Para testar pode-se utilizar o arquivo [requisições para testes](demo/src/main/java/com/example/demo/cliente/request.http), ou ainda executar o código do [cliente](demo/src/main/java/com/example/demo/cliente/Cliente.java)
-
 Para executar o cliente através do docker basta utilizar o comando, alterando o número de acordo com qual servidor o cliente vai se conectar. 
     ```bash
     docker-compose run --rm cliente(número do servidor)
     ```
-
+Para testar pode-se utilizar o arquivo [requisições para testes](demo/src/main/java/com/example/demo/cliente/request.http), ou ainda executar o código do [cliente](demo/src/main/java/com/example/demo/cliente/Cliente.java)
 
 ## Conclusão
 
