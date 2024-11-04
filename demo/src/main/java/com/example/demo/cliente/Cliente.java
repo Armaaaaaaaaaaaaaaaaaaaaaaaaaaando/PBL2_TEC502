@@ -79,59 +79,97 @@ public class Cliente {
     }
 
     public static void main(String[] args) {
-        String servidorUrl = "http://localhost:8081";
+        // Obtém o URL do servidor a partir da variável de ambiente SERVER_URL, com fallback para um valor padrão
+        String servidorUrl = System.getenv("SERVER_URL");
+        if (servidorUrl == null || servidorUrl.isEmpty()) {
+            servidorUrl = "http://servidor1:8081"; // URL padrão se a variável de ambiente não estiver definida
+        }
+    
         Cliente cliente = new Cliente(servidorUrl);
         Scanner scanner = new Scanner(System.in);
-
-        // Exibir todas as rotas
-        cliente.todasAsRotas();
-
-        // Mostrar lista de cidades para escolha de origem
-        System.out.println("Escolha a cidade de origem:");
-        for (int i = 0; i < cidades.size(); i++) {
-            System.out.println(i + ": " + cidades.get(i));
-        }
-        System.out.print("Digite o número da cidade de origem: ");
-        int escolhaOrigem = scanner.nextInt();
-        scanner.nextLine(); // Consumir a quebra de linha
-        String origem = cidades.get(escolhaOrigem);
-
-        // Mostrar lista de cidades para escolha de destino
-        System.out.println("Escolha a cidade de destino:");
-        for (int i = 0; i < cidades.size(); i++) {
-            System.out.println(i + ": " + cidades.get(i));
-        }
-        System.out.print("Digite o número da cidade de destino: ");
-        int escolhaDestino = scanner.nextInt();
-        scanner.nextLine(); // Consumir a quebra de linha
-        String destino = cidades.get(escolhaDestino);
-
-        // Montar a rota
-        List<List<Trecho>> rotasDisponiveis = cliente.montarRota(origem, destino);
-        
-        // Exibir as rotas disponíveis
-        if (rotasDisponiveis != null && !rotasDisponiveis.isEmpty()) {
-            System.out.println("Rotas disponíveis:");
-            for (int i = 0; i < rotasDisponiveis.size(); i++) {
-                System.out.println("Rota " + i + ": " + rotasDisponiveis.get(i));
+    
+        while (true) {
+            try {
+                // Limpa o terminal
+                limparTerminal();
+    
+                // Exibir todas as rotas
+                cliente.todasAsRotas();
+    
+                // Mostrar lista de cidades para escolha de origem
+                System.out.println("Escolha a cidade de origem:");
+                for (int i = 0; i < cidades.size(); i++) {
+                    System.out.println(i + ": " + cidades.get(i));
+                }
+                System.out.print("Digite o número da cidade de origem: ");
+                int escolhaOrigem = scanner.nextInt();
+                scanner.nextLine(); // Consumir a quebra de linha
+                String origem = cidades.get(escolhaOrigem);
+    
+                // Mostrar lista de cidades para escolha de destino
+                System.out.println("Escolha a cidade de destino:");
+                for (int i = 0; i < cidades.size(); i++) {
+                    System.out.println(i + ": " + cidades.get(i));
+                }
+                System.out.print("Digite o número da cidade de destino: ");
+                int escolhaDestino = scanner.nextInt();
+                scanner.nextLine(); // Consumir a quebra de linha
+                String destino = cidades.get(escolhaDestino);
+    
+                // Montar a rota
+                List<List<Trecho>> rotasDisponiveis = cliente.montarRota(origem, destino);
+    
+                // Exibir as rotas disponíveis
+                if (rotasDisponiveis != null && !rotasDisponiveis.isEmpty()) {
+                    System.out.println("Rotas disponíveis:");
+                    for (int i = 0; i < rotasDisponiveis.size(); i++) {
+                        System.out.println("Rota " + i + ": " + rotasDisponiveis.get(i));
+                    }
+    
+                    // Solicitar escolha da rota
+                    System.out.print("Escolha uma rota (número): ");
+                    int escolhaRota = scanner.nextInt();
+                    scanner.nextLine();
+    
+                    // Verificar escolha válida e realizar a compra
+                    if (escolhaRota >= 0 && escolhaRota < rotasDisponiveis.size()) {
+                        List<Trecho> rotaEscolhida = rotasDisponiveis.get(escolhaRota);
+                        cliente.comprarPassagem(rotaEscolhida);
+                    } else {
+                        System.out.println("Escolha inválida. Tente novamente.");
+                    }
+                } else {
+                    System.out.println("Nenhuma rota disponível. Tente novamente.");
+                }
+    
+                // Perguntar ao usuário se deseja repetir o processo
+                System.out.print("Deseja realizar outra operação? (s/n): ");
+                String resposta = scanner.nextLine();
+                if (!resposta.equalsIgnoreCase("s")) {
+                    break;
+                }
+            } catch (Exception e) {
+                System.out.println("Ocorreu um erro: " + e.getMessage() + ". Reiniciando o processo.");
             }
-
-            // Solicitar escolha da rota
-            System.out.print("Escolha uma rota (número): ");
-            int escolhaRota = scanner.nextInt();
-            scanner.nextLine();
-
-            // Verificar escolha válida e realizar a compra
-            if (escolhaRota >= 0 && escolhaRota < rotasDisponiveis.size()) {
-                List<Trecho> rotaEscolhida = rotasDisponiveis.get(escolhaRota);
-                cliente.comprarPassagem(rotaEscolhida);
-            } else {
-                System.out.println("Escolha inválida.");
-            }
-        } else {
-            System.out.println("Nenhuma rota disponível.");
         }
-
+    
         scanner.close();
     }
+    
+    // Método para simular a limpeza do terminal
+    private static void limparTerminal() {
+        try {
+            // Verifica o sistema operacional e executa o comando adequado
+            if (System.getProperty("os.name").contains("Windows")) {
+                new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
+            } else {
+                System.out.print("\033[H\033[2J"); // Escape ANSI para limpar o terminal no Linux/macOS
+                System.out.flush();
+            }
+        } catch (Exception e) {
+            // Caso não seja possível limpar o terminal, imprime linhas vazias
+            for (int i = 0; i < 50; i++) System.out.println();
+        }
+    }
+    
 }
